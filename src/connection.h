@@ -548,8 +548,6 @@ class ConnectionThread: public SimpleThread
 {
 public:
 	ConnectionThread(u32 protocol_id, u32 max_packet_size, float timeout, bool ipv6);
-	ConnectionThread(u32 protocol_id, u32 max_packet_size, float timeout, bool ipv6,
-			PeerHandler *peerhandler);
 	~ConnectionThread();
 	void * Thread();
 
@@ -627,8 +625,8 @@ public:
 class Connection
 {
 public:
-	Connection(u32 protocol_id, u32 max_packet_size, float timeout);
-	Connection(u32 protocol_id, u32 max_packet_size, float timeout,
+	Connection(u32 protocol_id, u32 max_packet_size, float timeout, bool ipv6);
+	Connection(u32 protocol_id, u32 max_packet_size, float timeout, bool ipv6,
 			PeerHandler *peerhandler);
 	~Connection();
 

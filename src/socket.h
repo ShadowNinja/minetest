@@ -110,25 +110,41 @@ private:
 	u16 m_port; // Port is separate from sockaddr structures
 };
 
-class UDPSocket
+class Socket
 {
 public:
-	UDPSocket(bool ipv6);
-	~UDPSocket();
-	void Bind(unsigned short port);
-	//void Close();
-	//bool IsOpen();
-	void Send(const Address & destination, const void * data, int size);
-	// Returns -1 if there is no data
-	int Receive(Address & sender, void * data, int size);
 	int GetHandle(); // For debugging purposes only
 	void setTimeoutMs(int timeout_ms);
 	// Returns true if there is data, false if timeout occurred
 	bool WaitData(int timeout_ms);
-private:
+protected:
 	int m_handle;
 	int m_timeout_ms;
 	int m_addr_family;
+};
+
+class UDPSocket : public Socket
+{
+public:
+	UDPSocket(bool ipv6);
+	~UDPSocket();
+	void Bind(u16 port);
+	void Send(const Address &destination, const void *data, int size);
+	// Returns -1 if there is no data
+	int Receive(Address &sender, void *data, int size);
+};
+
+class TCPSocket : public Socket
+{
+public:
+	TCPSocket(bool ipv6);
+	~TCPSocket();
+	void Bind(u16 port);
+	bool Connect(const Address &destination);
+	void Send(const void *data, int size);
+	// Returns -1 if there is no data
+	int Receive(void *data, int size);
+	TCPSocket* Accept();
 };
 
 #endif

@@ -291,6 +291,68 @@ void Address::print(std::ostream *s) const
 }
 
 /*
+	Socket
+*/
+
+int Socket::GetHandle()
+{
+	return m_handle;
+}
+
+void Socket::setTimeoutMs(int timeout_ms)
+{
+	m_timeout_ms = timeout_ms;
+}
+
+bool Socket::WaitData(int timeout_ms)
+{
+	fd_set readset;
+	int result;
+
+	// Initialize the set
+	FD_ZERO(&readset);
+	FD_SET(m_handle, &readset);
+
+	// Initialize time out struct
+	struct timeval tv;
+	tv.tv_sec = 0;
+	tv.tv_usec = timeout_ms * 1000;
+
+	// select()
+	result = select(m_handle+1, &readset, NULL, NULL, &tv);
+
+	if(result == 0)
+		return false;
+	else if(result < 0 && errno == EINTR)
+		return false;
+	else if(result < 0)
+	{
+		dstream << (int) m_handle << ": Select failed: "
+		        << strerror(errno) << std::endl;
+
+#ifdef _WIN32
+		int e = WSAGetLastError();
+		dstream << (int) m_handle << ": WSAGetLastError()="
+		        << e << std::endl;
+		if(e == 10004) { // WSAEINTR
+			dstream << "WARNING: Ignoring WSAEINTR." << std::endl;
+			return false;
+		}
+#endif
+
+		throw SocketException("Select failed");
+	}
+	else if(FD_ISSET(m_handle, &readset) == false)
+	{
+		// No data
+		return false;
+	}
+	
+	// There is data
+	return true;
+}
+
+/*
 	UDPSocket
 */
 
@@ -378,7 +440,7 @@ void UDPSocket::Bind(u16 port)
 	}
 }
 
-void UDPSocket::Send(const Address & destination, const void * data, int size)
+void UDPSocket::Send(const Address &destination, const void *data, int size)
 {
 	bool dumping_packet = false; // for INTERNET_SIMULATOR
 
@@ -446,7 +508,7 @@ void UDPSocket::Send(const Address & destination, const void * data, int size)
 	}
 }
 
-int UDPSocket::Receive(Address & sender, void * data, int size)
+int UDPSocket::Receive(Address &sender, void *data, int size)
 {
 	// Return on timeout
 	if(WaitData(m_timeout_ms) == false)
@@ -455,14 +517,13 @@ int UDPSocket::Receive(Address & sender, void * data, int size)
 	}
 
 	int received;
-	if(m_addr_family == AF_INET6)
-	{
+	if(m_addr_family == AF_INET6) {
 		struct sockaddr_in6 address;
 		memset(&address, 0, sizeof(address));
 		socklen_t address_len = sizeof(address);
 
-		received = recvfrom(m_handle, (char *) data,
-				size, 0, (struct sockaddr *) &address, &address_len);
+		received = recvfrom(m_handle, (char *) data, size, 0,
+				(struct sockaddr *) &address, &address_len);
 
 		if(received < 0)
 			return -1;
@@ -471,16 +532,13 @@ int UDPSocket::Receive(Address & sender, void * data, int size)
 		IPv6AddressBytes bytes;
 		memcpy(bytes.bytes, address.sin6_addr.s6_addr, 16);
 		sender = Address(&bytes, address_port);
-	}
-	else
-	{
+	} else {
 		struct sockaddr_in address;
 		memset(&address, 0, sizeof(address));
-
 		socklen_t address_len = sizeof(address);
 
-		received = recvfrom(m_handle, (char *) data,
-				size, 0, (struct sockaddr *) &address, &address_len);
+		received = recvfrom(m_handle, (char *) data, size, 0,
+				(struct sockaddr *) &address, &address_len);
 
 		if(received < 0)
 			return -1;
@@ -500,13 +558,13 @@ int UDPSocket::Receive(Address & sender, void * data, int size)
 		
 		// Print packet contents
 		dstream << ", data=";
+		dstream << std::hex << std::setw(2) << std::setfill('0');
 		for(int i = 0; i < received && i < 20; i++)
 		{
 			if(i % 2 == 0)
 				dstream << " ";
 			unsigned int a = ((const unsigned char *) data)[i];
-			dstream << std::hex << std::setw(2) << std::setfill('0')
-				<< a;
+			dstream << a;
 		}
 		if(received > 20)
 			dstream << "...";
@@ -517,61 +575,177 @@ int UDPSocket::Receive(Address & sender, void * data, int size)
 	return received;
 }
 
-int UDPSocket::GetHandle()
+
+/*
+	TCPSocket
+*/
+
+TCPSocket::TCPSocket(bool ipv6)
 {
-	return m_handle;
-}
-
-void UDPSocket::setTimeoutMs(int timeout_ms)
-{
-	m_timeout_ms = timeout_ms;
-}
-
-bool UDPSocket::WaitData(int timeout_ms)
-{
-	fd_set readset;
-	int result;
-
-	// Initialize the set
-	FD_ZERO(&readset);
-	FD_SET(m_handle, &readset);
-
-	// Initialize time out struct
-	struct timeval tv;
-	tv.tv_sec = 0;
-	tv.tv_usec = timeout_ms * 1000;
-
-	// select()
-	result = select(m_handle+1, &readset, NULL, NULL, &tv);
-
-	if(result == 0)
-		return false;
-	else if(result < 0 && errno == EINTR)
-		return false;
-	else if(result < 0)
-	{
-		dstream << (int) m_handle << ": Select failed: "
-		        << strerror(errno) << std::endl;
-
-#ifdef _WIN32
-		int e = WSAGetLastError();
-		dstream << (int) m_handle << ": WSAGetLastError()="
-		        << e << std::endl;
-		if(e == 10004 /* = WSAEINTR */)
-		{
-			dstream << "WARNING: Ignoring WSAEINTR." << std::endl;
-			return false;
-		}
-#endif
-
-		throw SocketException("Select failed");
-	}
-	else if(FD_ISSET(m_handle, &readset) == false)
-	{
-		// No data
-		return false;
+	if(g_sockets_initialized == false) {
+		throw SocketException("Sockets not initialized");
 	}
 	
-	// There is data
+	m_handle = socket(ipv6 ? AF_INET6 : AF_INET, SOCK_STREAM, 0);
+
+	if(socket_enable_debug_output) {
+		dstream << "TCPSocket(" << (int) m_handle << ")::TCPSocket()" << std::endl;
+	}
+
+	if(m_handle <= 0) {
+		throw SocketException("Failed to create socket");
+	}
+
+	setTimeoutMs(0);
+}
+
+TCPSocket::~TCPSocket()
+{
+	if(socket_enable_debug_output) {
+		dstream << "TCPSocket(" << (int) m_handle << ")::~TCPSocket()" << std::endl;
+	}
+#ifdef _WIN32
+	closesocket(m_handle);
+#else
+	close(m_handle);
+#endif
+}
+
+void TCPSocket::Bind(u16 port)
+{
+	if(socket_enable_debug_output) {
+		dstream << "TCPSocket(" << (int) m_handle << ")::Bind(): "
+		        << "port=" << port << std::endl;
+	}
+
+	if(m_addr_family == AF_INET6) {
+		struct sockaddr_in6 address;
+		memset(&address, 0, sizeof(address));
+
+		address.sin6_family = AF_INET6;
+		address.sin6_addr   = in6addr_any;
+		address.sin6_port   = htons(port);
+
+		if(bind(m_handle, (const struct sockaddr *) &address,
+		        sizeof(struct sockaddr_in6)) < 0)
+		{
+			dstream << (int) m_handle << ": Bind failed: "
+			        << strerror(errno) << std::endl;
+			throw SocketException("Failed to bind socket");
+		}
+	} else {
+		struct sockaddr_in address;
+		memset(&address, 0, sizeof(address));
+
+		address.sin_family      = AF_INET;
+		address.sin_addr.s_addr = INADDR_ANY;
+		address.sin_port        = htons(port);
+
+		if(bind(m_handle, (const struct sockaddr *) &address,
+		   	     sizeof(struct sockaddr_in)) < 0) {
+			dstream << (int) m_handle << ": Bind failed: "
+			        << strerror(errno) << std::endl;
+			throw SocketException("Failed to bind socket");
+		}
+	}
+
+	if(listen(m_handle, 5) < 0) {
+		dstream << (int)m_handle << ": Listen failed: " << strerror(errno) << std::endl;
+		throw SocketException("Failed to set socket to listening mode");
+	}
+}
+
+bool TCPSocket::Connect(const Address &destination)
+{
+	if (m_addr_family == AF_INET6) {
+		sockaddr_in6 address6 = destination.getAddress6();
+		address6.sin6_port = htons(destination.getPort());
+		if(connect(m_handle, (sockaddr*) &address6, sizeof(sockaddr_in6)) < 0) {
+			dstream << (int) m_handle << ": Connect failed: " << strerror(errno) << std::endl;
+			return false;
+		}
+	} else {
+		sockaddr_in address = destination.getAddress();
+		address.sin_port = htons(destination.getPort());
+		if(connect(m_handle, (sockaddr*) &address, sizeof(sockaddr_in)) < 0) {
+			dstream << (int) m_handle << ": Connect failed: " << strerror(errno) << std::endl;
+			return false;
+		}
+	}
+
 	return true;
 }
+
+void TCPSocket::Send(const void *data, int size)
+{
+	int sent = send(m_handle, (const char*) data, size, 0);
+
+	if(sent != size) {
+		throw SendFailedException("Failed to send data");
+	}
+}
+
+int TCPSocket::Receive(void *data, int size)
+{
+	if(WaitData(m_timeout_ms) == false) {
+		return -1;
+	}
+
+	int received;
+	if (m_addr_family == AF_INET6) {
+		sockaddr_in6 address;
+		socklen_t address_len = sizeof(address);
+
+		received = recvfrom(m_handle, (char*) data,
+			size, 0, (sockaddr*) &address, &address_len);
+	} else {
+		sockaddr_in address;
+		socklen_t address_len = sizeof(address);
+
+		received = recvfrom(m_handle, (char*) data,
+			size, 0, (sockaddr*) &address, &address_len);
+	}
+
+	if(received < 0)
+		return -1;
+
+	if(socket_enable_debug_output) {
+		dstream << (int) m_handle << " <- "
+		        << ", size=" << received << ", data=";
+		dstream << std::hex << std::setw(2) << std::setfill('0');
+		for(int i = 0; i < received && i < 20; i++){
+			if(i % 2 == 0) dstream << " ";
+			unsigned int a = ((const unsigned char*) data)[i];
+			dstream << a;
+		}
+		if(received > 20) {
+			dstream << "...";
+		}
+		dstream << std::dec << std::endl;
+	}
+
+	return received;
+}
+
+TCPSocket* TCPSocket::Accept()
+{
+	int client;
+	if (m_addr_family == AF_INET6) {
+		sockaddr_in6 address;
+		socklen_t address_len = sizeof(address);
+		client = accept(m_handle, (sockaddr*) &address, &address_len);
+	} else {
+		sockaddr_in address;
+		socklen_t address_len = sizeof(address);
+		client = accept(m_handle, (sockaddr*) &address, &address_len);
+	}
+
+	if(client < 0){
+		dstream << (int) m_handle << ": Accept failed: " << strerror(errno) << std::endl;
+		throw SocketException("Failed to accept socket");
+	}
+	TCPSocket *socket = new TCPSocket(m_addr_family == AF_INET6);
+	socket->m_handle = client;
+	return socket;
+}
+
