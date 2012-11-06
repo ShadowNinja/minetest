@@ -34,10 +34,8 @@ public:
 		*refcount = 1;
 		ptr = t;
 	}
-	SharedPtr(SharedPtr<T> &t)
+	SharedPtr(const SharedPtr<T> &t)
 	{
-		//*this = t;
-		drop();
 		refcount = t.refcount;
 		(*refcount)++;
 		ptr = t.ptr;
@@ -54,7 +52,7 @@ public:
 		ptr = t;
 		return *this;
 	}
-	SharedPtr<T> & operator=(SharedPtr<T> &t)
+	SharedPtr<T> & operator=(const SharedPtr<T> &t)
 	{
 		drop();
 		refcount = t.refcount;
@@ -62,23 +60,27 @@ public:
 		ptr = t.ptr;
 		return *this;
 	}
-	T* operator->()
+	T* get() const
 	{
 		return ptr;
 	}
-	T & operator*()
+	T* operator->() const
+	{
+		return ptr;
+	}
+	T & operator*() const
 	{
 		return *ptr;
 	}
-	bool operator!=(T *t)
+	bool operator!=(T *t) const
 	{
 		return ptr != t;
 	}
-	bool operator==(T *t)
+	bool operator==(T *t) const
 	{
 		return ptr == t;
 	}
-	T & operator[](unsigned int i)
+	T & operator[](unsigned int i) const
 	{
 		return ptr[i];
 	}
