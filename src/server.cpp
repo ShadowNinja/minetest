@@ -1055,13 +1055,6 @@ void Server::AsyncRunStep()
 	}
 
 	{
-		// Process connection's timeouts
-		JMutexAutoLock lock2(m_con_mutex);
-		ScopeProfiler sp(g_profiler, "Server: connection timeout processing");
-		m_con.RunTimeouts(dtime);
-	}
-
-	{
 		// This has to be called so that the client list gets synced
 		// with the peer list of the connection
 		handlePeerChanges();

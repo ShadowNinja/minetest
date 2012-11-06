@@ -544,13 +544,13 @@ struct ConnectionCommand
 	}
 };
 
-class Connection: public SimpleThread
+class ConnectionThread: public SimpleThread
 {
 public:
-	Connection(u32 protocol_id, u32 max_packet_size, float timeout, bool ipv6);
-	Connection(u32 protocol_id, u32 max_packet_size, float timeout, bool ipv6,
+	ConnectionThread(u32 protocol_id, u32 max_packet_size, float timeout, bool ipv6);
+	ConnectionThread(u32 protocol_id, u32 max_packet_size, float timeout, bool ipv6,
 			PeerHandler *peerhandler);
-	~Connection();
+	~ConnectionThread();
 	void * Thread();
 
 	/* Interface */
@@ -559,19 +559,10 @@ public:
 	ConnectionEvent waitEvent(u32 timeout_ms);
 	void putCommand(ConnectionCommand &c);
 	
-	void SetTimeoutMs(int timeout){ m_bc_receive_timeout = timeout; }
-	void Serve(unsigned short port);
-	void Connect(Address address);
 	bool Connected();
-	void Disconnect();
-	u32 Receive(u16 &peer_id, SharedBuffer<u8> &data);
-	void SendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable);
-	void Send(u16 peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable);
-	void RunTimeouts(float dtime); // dummy
 	u16 GetPeerID(){ return m_peer_id; }
 	Address GetPeerAddress(u16 peer_id);
 	float GetPeerAvgRTT(u16 peer_id);
-	void DeletePeer(u16 peer_id);
 	
 private:
 	void putEvent(ConnectionEvent &e);
@@ -624,16 +615,49 @@ private:
 	std::map<u16, Peer*> m_peers;
 	JMutex m_peers_mutex;
 
-	// Backwards compatibility
-	PeerHandler *m_bc_peerhandler;
-	int m_bc_receive_timeout;
-	
 	void SetPeerID(u16 id){ m_peer_id = id; }
 	u32 GetProtocolID(){ return m_protocol_id; }
 	void PrintInfo(std::ostream &out);
 	void PrintInfo();
-	std::string getDesc();
 	u16 m_indentation;
+public:
+	std::string getDesc();
+};
+
+class Connection
+{
+public:
+	Connection(u32 protocol_id, u32 max_packet_size, float timeout);
+	Connection(u32 protocol_id, u32 max_packet_size, float timeout,
+			PeerHandler *peerhandler);
+	~Connection();
+
+	ConnectionEvent getEvent();
+	ConnectionEvent waitEvent(u32 timeout_ms);
+	void putCommand(ConnectionCommand &c);
+	
+	void Serve(unsigned short port);
+	void Connect(Address address);
+	void Disconnect();
+	void SendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable);
+	void Send(u16 peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable);
+	void DeletePeer(u16 peer_id);
+	
+	bool Connected();
+	u16 GetPeerID();
+	Address GetPeerAddress(u16 peer_id);
+	float GetPeerAvgRTT(u16 peer_id);
+
+	// Backwards compatibility
+	u32 Receive(u16 &peer_id, SharedBuffer<u8> &data);
+	void SetTimeoutMs(int timeout){ m_bc_receive_timeout = timeout; }
+
+private:
+	ConnectionThread m_thread;
+
+	// Backwards compatibility
+	PeerHandler *m_bc_peerhandler;
+	int m_bc_receive_timeout;
 };
 
 } // namespace

@@ -426,13 +426,6 @@ void Client::step(float dtime)
 		ReceiveAll();
 	}
 	
-	{
-		//TimeTaker timer("m_con_mutex + m_con.RunTimeouts()", m_device);
-		// 0ms
-		//JMutexAutoLock lock(m_con_mutex); //bulk comment-out
-		m_con.RunTimeouts(dtime);
-	}
-
 	/*
 		Packet counter
 	*/

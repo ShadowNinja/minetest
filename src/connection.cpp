@@ -518,18 +518,16 @@ void Peer::reportRTT(float rtt)
 }
 				
 /*
-	Connection
+	ConnectionThread
 */
 
-Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout,
+ConnectionThread::ConnectionThread(u32 protocol_id, u32 max_packet_size, float timeout,
 		bool ipv6):
 	m_protocol_id(protocol_id),
 	m_max_packet_size(max_packet_size),
 	m_timeout(timeout),
 	m_socket(ipv6),
 	m_peer_id(0),
-	m_bc_peerhandler(NULL),
-	m_bc_receive_timeout(0),
 	m_indentation(0)
 {
 	m_socket.setTimeoutMs(5);
@@ -537,7 +535,7 @@ Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout,
 	Start();
 }
 
-Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout,
+ConnectionThread::ConnectionThread(u32 protocol_id, u32 max_packet_size, float timeout,
 		bool ipv6, PeerHandler *peerhandler):
 	m_protocol_id(protocol_id),
 	m_max_packet_size(max_packet_size),
@@ -554,7 +552,7 @@ Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout,
 }
 
 
-Connection::~Connection()
+ConnectionThread::~ConnectionThread()
 {
 	stop();
 	// Delete peers
@@ -568,12 +566,12 @@ Connection::~Connection()
 
 /* Internal stuff */
 
-void * Connection::Thread()
+void * ConnectionThread::Thread()
 {
 	ThreadStarted();
-	log_register_thread("Connection");
+	log_register_thread("ConnectionThread");
 
-	dout_con<<"Connection thread started"<<std::endl;
+	dout_con<<"ConnectionThread thread started"<<std::endl;
 	
 	u32 curtime = porting::getTimeMs();
 	u32 lasttime = curtime;
@@ -607,13 +605,13 @@ void * Connection::Thread()
 	return NULL;
 }
 
-void Connection::putEvent(ConnectionEvent &e)
+void ConnectionThread::putEvent(ConnectionEvent &e)
 {
 	assert(e.type != CONNEVENT_NONE);
 	m_event_queue.push_back(e);
 }
 
-void Connection::processCommand(ConnectionCommand &c)
+void ConnectionThread::processCommand(ConnectionCommand &c)
 {
 	switch(c.type){
 	case CONNCMD_NONE:
@@ -647,7 +645,7 @@ void Connection::processCommand(ConnectionCommand &c)
 	}
 }
 
-void Connection::send(float dtime)
+void ConnectionThread::send(float dtime)
 {
 	for(std::map<u16, Peer*>::iterator
 			j = m_peers.begin();
@@ -691,7 +689,7 @@ void Connection::send(float dtime)
 }
 
 // Receive packets from the network and buffers and create ConnectionEvents
-void Connection::receive()
+void ConnectionThread::receive()
 {
 	u32 datasize = m_max_packet_size * 2;  // Double it just to be safe
 	// TODO: We can not know how many layers of header there are.
@@ -894,7 +892,7 @@ void Connection::receive()
 	} // for
 }
 
-void Connection::runTimeouts(float dtime)
+void ConnectionThread::runTimeouts(float dtime)
 {
 	float congestion_control_aim_rtt
 			= g_settings->getFloat("congestion_control_aim_rtt");
@@ -1020,7 +1018,7 @@ nextpeer:
 	}
 }
 
-void Connection::serve(u16 port)
+void ConnectionThread::serve(u16 port)
 {
 	dout_con<<getDesc()<<" serving at port "<<port<<std::endl;
 	try{
@@ -1035,7 +1033,7 @@ void Connection::serve(u16 port)
 	}
 }
 
-void Connection::connect(Address address)
+void ConnectionThread::connect(Address address)
 {
 	dout_con<<getDesc()<<" connecting to "<<address.serializeString()
 			<<":"<<address.getPort()<<std::endl;
@@ -1058,10 +1056,12 @@ void Connection::connect(Address address)
 	// Send a dummy packet to server with peer_id = PEER_ID_INEXISTENT
 	m_peer_id = PEER_ID_INEXISTENT;
 	SharedBuffer<u8> data(0);
-	Send(PEER_ID_SERVER, 0, data, true);
+	ConnectionCommand c;
+	c.send(PEER_ID_SERVER, 0, data, true);
+	putCommand(c);
 }
 
-void Connection::disconnect()
+void ConnectionThread::disconnect()
 {
 	dout_con<<getDesc()<<" disconnecting"<<std::endl;
 
@@ -1079,7 +1079,7 @@ void Connection::disconnect()
 	}
 }
 
-void Connection::sendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable)
+void ConnectionThread::sendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable)
 {
 	for(std::map<u16, Peer*>::iterator j = m_peers.begin();
 		j != m_peers.end(); ++j)
@@ -1089,7 +1089,7 @@ void Connection::sendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable)
 	}
 }
 
-void Connection::send(u16 peer_id, u8 channelnum,
+void ConnectionThread::send(u16 peer_id, u8 channelnum,
 		SharedBuffer<u8> data, bool reliable)
 {
 	dout_con<<getDesc()<<" sending to peer_id="<<peer_id<<std::endl;
@@ -1118,14 +1118,14 @@ void Connection::send(u16 peer_id, u8 channelnum,
 	}
 }
 
-void Connection::sendAsPacket(u16 peer_id, u8 channelnum,
+void ConnectionThread::sendAsPacket(u16 peer_id, u8 channelnum,
 		SharedBuffer<u8> data, bool reliable)
 {
 	OutgoingPacket packet(peer_id, channelnum, data, reliable);
 	m_outgoing_queue.push_back(packet);
 }
 
-void Connection::rawSendAsPacket(u16 peer_id, u8 channelnum,
+void ConnectionThread::rawSendAsPacket(u16 peer_id, u8 channelnum,
 		SharedBuffer<u8> data, bool reliable)
 {
 	Peer *peer = getPeerNoEx(peer_id);
@@ -1171,17 +1171,17 @@ void Connection::rawSendAsPacket(u16 peer_id, u8 channelnum,
 	}
 }
 
-void Connection::rawSend(const BufferedPacket &packet)
+void ConnectionThread::rawSend(const BufferedPacket &packet)
 {
 	try{
 		m_socket.Send(packet.address, *packet.data, packet.data.getSize());
 	} catch(SendFailedException &e){
-		derr_con<<"Connection::rawSend(): SendFailedException: "
+		derr_con<<"ConnectionThread::rawSend(): SendFailedException: "
 				<<packet.address.serializeString()<<std::endl;
 	}
 }
 
-Peer* Connection::getPeer(u16 peer_id)
+Peer* ConnectionThread::getPeer(u16 peer_id)
 {
 	std::map<u16, Peer*>::iterator node = m_peers.find(peer_id);
 
@@ -1195,7 +1195,7 @@ Peer* Connection::getPeer(u16 peer_id)
 	return node->second;
 }
 
-Peer* Connection::getPeerNoEx(u16 peer_id)
+Peer* ConnectionThread::getPeerNoEx(u16 peer_id)
 {
 	std::map<u16, Peer*>::iterator node = m_peers.find(peer_id);
 
@@ -1209,7 +1209,7 @@ Peer* Connection::getPeerNoEx(u16 peer_id)
 	return node->second;
 }
 
-std::list<Peer*> Connection::getPeers()
+std::list<Peer*> ConnectionThread::getPeers()
 {
 	std::list<Peer*> list;
 	for(std::map<u16, Peer*>::iterator j = m_peers.begin();
@@ -1221,7 +1221,7 @@ std::list<Peer*> Connection::getPeers()
 	return list;
 }
 
-bool Connection::getFromBuffers(u16 &peer_id, SharedBuffer<u8> &dst)
+bool ConnectionThread::getFromBuffers(u16 &peer_id, SharedBuffer<u8> &dst)
 {
 	for(std::map<u16, Peer*>::iterator j = m_peers.begin();
 		j != m_peers.end(); ++j)
@@ -1241,7 +1241,7 @@ bool Connection::getFromBuffers(u16 &peer_id, SharedBuffer<u8> &dst)
 	return false;
 }
 
-bool Connection::checkIncomingBuffers(Channel *channel, u16 &peer_id,
+bool ConnectionThread::checkIncomingBuffers(Channel *channel, u16 &peer_id,
 		SharedBuffer<u8> &dst)
 {
 	u16 firstseqnum = 0;
@@ -1288,7 +1288,7 @@ bool Connection::checkIncomingBuffers(Channel *channel, u16 &peer_id,
 	return false;
 }
 
-SharedBuffer<u8> Connection::processPacket(Channel *channel,
+SharedBuffer<u8> ConnectionThread::processPacket(Channel *channel,
 		SharedBuffer<u8> packetdata, u16 peer_id,
 		u8 channelnum, bool reliable)
 {
@@ -1530,7 +1530,7 @@ SharedBuffer<u8> Connection::processPacket(Channel *channel,
 	throw BaseException("Error in Channel::ProcessPacket()");
 }
 
-bool Connection::deletePeer(u16 peer_id, bool timeout)
+bool ConnectionThread::deletePeer(u16 peer_id, bool timeout)
 {
 	if(m_peers.find(peer_id) == m_peers.end())
 		return false;
@@ -1549,7 +1549,7 @@ bool Connection::deletePeer(u16 peer_id, bool timeout)
 
 /* Interface */
 
-ConnectionEvent Connection::getEvent()
+ConnectionEvent ConnectionThread::getEvent()
 {
 	if(m_event_queue.empty()){
 		ConnectionEvent e;
@@ -1559,7 +1559,7 @@ ConnectionEvent Connection::getEvent()
 	return m_event_queue.pop_front();
 }
 
-ConnectionEvent Connection::waitEvent(u32 timeout_ms)
+ConnectionEvent ConnectionThread::waitEvent(u32 timeout_ms)
 {
 	try{
 		return m_event_queue.pop_front(timeout_ms);
@@ -1570,26 +1570,12 @@ ConnectionEvent Connection::waitEvent(u32 timeout_ms)
 	}
 }
 
-void Connection::putCommand(ConnectionCommand &c)
+void ConnectionThread::putCommand(ConnectionCommand &c)
 {
 	m_command_queue.push_back(c);
 }
 
-void Connection::Serve(unsigned short port)
-{
-	ConnectionCommand c;
-	c.serve(port);
-	putCommand(c);
-}
-
-void Connection::Connect(Address address)
-{
-	ConnectionCommand c;
-	c.connect(address);
-	putCommand(c);
-}
-
-bool Connection::Connected()
+bool ConnectionThread::Connected()
 {
 	JMutexAutoLock peerlock(m_peers_mutex);
 
@@ -1606,6 +1592,83 @@ bool Connection::Connected()
 	return true;
 }
 
+Address ConnectionThread::GetPeerAddress(u16 peer_id)
+{
+	JMutexAutoLock peerlock(m_peers_mutex);
+	return getPeer(peer_id)->address;
+}
+
+float ConnectionThread::GetPeerAvgRTT(u16 peer_id)
+{
+	JMutexAutoLock peerlock(m_peers_mutex);
+	return getPeer(peer_id)->avg_rtt;
+}
+
+void ConnectionThread::PrintInfo(std::ostream &out)
+{
+	out<<getDesc()<<": ";
+}
+
+void ConnectionThread::PrintInfo()
+{
+	PrintInfo(dout_con);
+}
+
+std::string ConnectionThread::getDesc()
+{
+	return std::string("con(")+itos(m_socket.GetHandle())+"/"+itos(m_peer_id)+")";
+}
+
+/*
+	Connection
+*/
+
+Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout):
+	m_thread(protocol_id, max_packet_size, timeout),
+	m_bc_peerhandler(NULL)
+{
+}
+
+Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout,
+		PeerHandler *peerhandler):
+	m_thread(protocol_id, max_packet_size, timeout),
+	m_bc_peerhandler(peerhandler)
+{
+}
+
+Connection::~Connection()
+{
+}
+
+ConnectionEvent Connection::getEvent()
+{
+	return m_thread.getEvent();
+}
+
+ConnectionEvent Connection::waitEvent(u32 timeout_ms)
+{
+	return m_thread.waitEvent(timeout_ms);
+}
+
+void Connection::putCommand(ConnectionCommand &c)
+{
+	m_thread.putCommand(c);
+}
+
+void Connection::Serve(unsigned short port)
+{
+	ConnectionCommand c;
+	c.serve(port);
+	putCommand(c);
+}
+
+void Connection::Connect(Address address)
+{
+	ConnectionCommand c;
+	c.connect(address);
+	putCommand(c);
+}
+
 void Connection::Disconnect()
 {
 	ConnectionCommand c;
@@ -1613,12 +1676,58 @@ void Connection::Disconnect()
 	putCommand(c);
 }
 
+void Connection::SendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable)
+{
+	assert(channelnum < CHANNEL_COUNT);
+
+	ConnectionCommand c;
+	c.sendToAll(channelnum, data, reliable);
+	putCommand(c);
+}
+
+void Connection::Send(u16 peer_id, u8 channelnum,
+		SharedBuffer<u8> data, bool reliable)
+{
+	assert(channelnum < CHANNEL_COUNT);
+
+	ConnectionCommand c;
+	c.send(peer_id, channelnum, data, reliable);
+	putCommand(c);
+}
+
+void Connection::DeletePeer(u16 peer_id)
+{
+	ConnectionCommand c;
+	c.deletePeer(peer_id);
+	putCommand(c);
+}
+
+bool Connection::Connected()
+{
+	return m_thread.Connected();
+}
+
+u16 Connection::GetPeerID()
+{
+	return m_thread.GetPeerID();
+}
+
+Address Connection::GetPeerAddress(u16 peer_id)
+{
+	return m_thread.GetPeerAddress(peer_id);
+}
+
+float Connection::GetPeerAvgRTT(u16 peer_id)
+{
+	return m_thread.GetPeerAvgRTT(peer_id);
+}
+
 u32 Connection::Receive(u16 &peer_id, SharedBuffer<u8> &data)
 {
 	for(;;){
 		ConnectionEvent e = waitEvent(m_bc_receive_timeout);
 		if(e.type != CONNEVENT_NONE)
-			dout_con<<getDesc()<<": Receive: got event: "
+			dout_con<<m_thread.getDesc()<<": Receive: got event: "
 					<<e.describe()<<std::endl;
 		switch(e.type){
 		case CONNEVENT_NONE:
@@ -1643,64 +1752,6 @@ u32 Connection::Receive(u16 &peer_id, SharedBuffer<u8> &data)
 		}
 	}
 	throw NoIncomingDataException("No incoming data");
-}
-
-void Connection::SendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable)
-{
-	assert(channelnum < CHANNEL_COUNT);
-
-	ConnectionCommand c;
-	c.sendToAll(channelnum, data, reliable);
-	putCommand(c);
-}
-
-void Connection::Send(u16 peer_id, u8 channelnum,
-		SharedBuffer<u8> data, bool reliable)
-{
-	assert(channelnum < CHANNEL_COUNT);
-
-	ConnectionCommand c;
-	c.send(peer_id, channelnum, data, reliable);
-	putCommand(c);
-}
-
-void Connection::RunTimeouts(float dtime)
-{
-	// No-op
-}
-
-Address Connection::GetPeerAddress(u16 peer_id)
-{
-	JMutexAutoLock peerlock(m_peers_mutex);
-	return getPeer(peer_id)->address;
-}
-
-float Connection::GetPeerAvgRTT(u16 peer_id)
-{
-	JMutexAutoLock peerlock(m_peers_mutex);
-	return getPeer(peer_id)->avg_rtt;
-}
-
-void Connection::DeletePeer(u16 peer_id)
-{
-	ConnectionCommand c;
-	c.deletePeer(peer_id);
-	putCommand(c);
-}
-
-void Connection::PrintInfo(std::ostream &out)
-{
-	out<<getDesc()<<": ";
-}
-
-void Connection::PrintInfo()
-{
-	PrintInfo(dout_con);
-}
-
-std::string Connection::getDesc()
-{
-	return std::string("con(")+itos(m_socket.GetHandle())+"/"+itos(m_peer_id)+")";
 }
 
 } // namespace
