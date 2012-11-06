@@ -613,11 +613,17 @@ private:
 	std::map<u16, Peer*> m_peers;
 	JMutex m_peers_mutex;
 
+	bool m_is_listening;
+	TCPSocket m_bound_tcp;
+	std::list<SharedPtr<TCPSocket> > m_unknown_tcps;
+	std::map<u16, SharedPtr<TCPSocket> > m_peer_tcps;
+
 	void SetPeerID(u16 id){ m_peer_id = id; }
 	u32 GetProtocolID(){ return m_protocol_id; }
 	void PrintInfo(std::ostream &out);
 	void PrintInfo();
 	u16 m_indentation;
+	bool m_addr_family;
 public:
 	std::string getDesc();
 };

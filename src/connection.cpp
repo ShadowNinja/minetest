@@ -527,8 +527,11 @@ ConnectionThread::ConnectionThread(u32 protocol_id, u32 max_packet_size, float t
 	m_max_packet_size(max_packet_size),
 	m_timeout(timeout),
 	m_socket(ipv6),
+	m_bound_tcp(ipv6),
 	m_peer_id(0),
-	m_indentation(0)
+	m_is_listening(false),
+	m_indentation(0),
+	m_addr_family(ipv6 ? AF_INET6 : AF_INET)
 {
 	m_socket.setTimeoutMs(5);
 
@@ -679,6 +682,8 @@ void ConnectionThread::receive()
 	// For now, just assume there are no other than the base headers.
 	u32 packet_maxsize = datasize + BASE_HEADER_SIZE;
 	SharedBuffer<u8> packetdata(packet_maxsize);
+
+	/* UDP */
 
 	bool single_wait_done = false;
 	
@@ -873,6 +878,67 @@ void ConnectionThread::receive()
 	catch(ProcessedSilentlyException &e){
 	}
 	} // for
+
+	/* TCP */
+	
+	while(m_is_listening && m_bound_tcp.WaitData(0))
+	{
+		TCPSocket *socket = m_bound_tcp.Accept();
+		if(socket == NULL)
+			continue;
+		m_unknown_tcps.push_back(socket);
+		
+		PrintInfo(derr_con);
+		dout_con<<"receive(): Accepted a TCP connection"<<std::endl;
+	}
+		
+	for(std::list<SharedPtr<TCPSocket> >::iterator
+			i = m_unknown_tcps.begin();
+			i != m_unknown_tcps.end();)
+	{
+		SharedPtr<TCPSocket> socket = *i;
+		bool remove = false;
+		u16 peer_id = 0;
+		while(socket->WaitData(0)){
+			u8 buf[10];
+			s32 received_size = socket->Receive(buf, 4);
+			// protocol_id + peer_id is a regular connection
+			if(received_size == 4 && readU32(&buf[0]) == m_protocol_id){
+				s32 size2 = socket->Receive(buf, 2);
+				if(size2 == 2){
+					peer_id = readU16(&buf[0]);
+					break;
+				}
+			}
+			// Reply to HTTP because it's fun
+			if(received_size == 4 && std::string((char*)buf, 4) == "GET "){
+				char reply[] = "HTTP/1.1 200 OK\r\n"
+						"Content-Type: text/plain; charset=utf-8\r\n"
+						"\r\n"
+						"Minetest.";
+				socket->Send(reply, sizeof(reply)-1);
+				remove = true;
+				PrintInfo(derr_con);
+				dout_con<<"receive(): TCP client asked HTTP"<<std::endl;
+				break;
+			}
+			// The client is doing something odd; discard it
+			remove = true;
+			PrintInfo(derr_con);
+			dout_con<<"receive(): TCP client failed initial protocol"<<std::endl;
+			break;
+		}
+		if(peer_id){
+			m_peer_tcps[peer_id] = socket;
+			PrintInfo(derr_con);
+			dout_con<<"receive(): TCP client agreed from "<<peer_id<<std::endl;
+		}
+		if(remove){
+			m_unknown_tcps.erase(i++);
+		} else {
+			++i;
+		}
+	}
 }
 
 void ConnectionThread::runTimeouts(float dtime)
@@ -1007,6 +1073,8 @@ void ConnectionThread::serve(u16 port)
 	try{
 		m_socket.Bind(port);
 		m_peer_id = PEER_ID_SERVER;
+		m_bound_tcp.Bind(port);
+		m_is_listening = true;
 	}
 	catch(SocketException &e){
 		// Create event
@@ -1042,6 +1110,16 @@ void ConnectionThread::connect(Address address)
 	ConnectionCommand c;
 	c.send(PEER_ID_SERVER, 0, data, true);
 	putCommand(c);
+
+	// Connect to server using TCP
+	try{
+		SharedPtr<TCPSocket> tcp = new TCPSocket(m_addr_family == AF_INET6);
+		tcp->Connect(address);
+		m_peer_tcps[PEER_ID_SERVER] = tcp;
+	} catch(SocketException &e){
+		derr_con<<getDesc()<<" failed to connect with TCP to "
+				<<address.serializeString()<<std::endl;
+	}
 }
 
 void ConnectionThread::disconnect()
@@ -1608,14 +1686,16 @@ std::string ConnectionThread::getDesc()
 
 Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout, bool ipv6):
 	m_thread(protocol_id, max_packet_size, timeout, ipv6),
-	m_bc_peerhandler(NULL)
+	m_bc_peerhandler(NULL),
+	m_bc_receive_timeout(5)
 {
 }
 
 Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout, bool ipv6,
 		PeerHandler *peerhandler):
 	m_thread(protocol_id, max_packet_size, timeout, ipv6),
-	m_bc_peerhandler(peerhandler)
+	m_bc_peerhandler(peerhandler),
+	m_bc_receive_timeout(5)
 {
 }
 
