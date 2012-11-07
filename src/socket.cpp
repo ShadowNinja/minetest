@@ -596,6 +596,9 @@ TCPSocket::TCPSocket(bool ipv6)
 		throw SocketException("Failed to create socket");
 	}
 
+	int a=1;
+	setsockopt(m_handle, SOL_SOCKET, SO_REUSEADDR, &a, sizeof(a));
+
 	setTimeoutMs(0);
 }
 
