@@ -527,9 +527,9 @@ ConnectionThread::ConnectionThread(u32 protocol_id, u32 max_packet_size, float t
 	m_max_packet_size(max_packet_size),
 	m_timeout(timeout),
 	m_socket(ipv6),
-	m_bound_tcp(ipv6),
 	m_peer_id(0),
 	m_is_listening(false),
+	m_bound_tcp(ipv6),
 	m_indentation(0),
 	m_addr_family(ipv6 ? AF_INET6 : AF_INET)
 {
@@ -557,7 +557,7 @@ void * ConnectionThread::Thread()
 	ThreadStarted();
 	log_register_thread("ConnectionThread");
 
-	dout_con<<"ConnectionThread thread started"<<std::endl;
+	dout_con<<"ConnectionThread started"<<std::endl;
 	
 	u32 curtime = porting::getTimeMs();
 	u32 lasttime = curtime;
@@ -929,14 +929,67 @@ void ConnectionThread::receive()
 			break;
 		}
 		if(peer_id){
-			m_peer_tcps[peer_id] = socket;
-			PrintInfo(derr_con);
-			dout_con<<"receive(): TCP client agreed from "<<peer_id<<std::endl;
+			if(m_peer_tcps.find(peer_id) != m_peer_tcps.end()){
+				PrintInfo(derr_con);
+				derr_con<<"receive(): TCP client disagreed from "<<peer_id
+						<<": TCP socket already exists"<<std::endl;
+				remove = true;
+			} else if(getPeerNoEx(peer_id) == NULL){
+				PrintInfo(derr_con);
+				derr_con<<"receive(): TCP client disagreed from "<<peer_id
+						<<": peer does not exist"<<std::endl;
+				remove = true;
+			} else{
+				m_peer_tcps[peer_id] = socket;
+				PrintInfo(derr_con);
+				dout_con<<"receive(): TCP client agreed from "<<peer_id<<std::endl;
+				remove = true;
+			}
 		}
 		if(remove){
 			m_unknown_tcps.erase(i++);
 		} else {
 			++i;
+		}
+	}
+
+	for(std::map<u16, SharedPtr<TCPSocket> >::iterator
+			i = m_peer_tcps.begin(); i != m_peer_tcps.end(); ++i)
+	{
+		u16 peer_id = i->first;
+		const SharedPtr<TCPSocket> &socket = i->second;
+		if(m_peer_streambufs.find(peer_id) == m_peer_streambufs.end())
+			m_peer_streambufs[peer_id] = StreamBuffer();
+		StreamBuffer &sbuf = m_peer_streambufs[peer_id];
+
+		bool got_something = false;
+		while(socket->WaitData(0)){
+			u8 ba[10000];
+			s32 received_size = socket->Receive(ba, 10000);
+			if(received_size <= 0)
+				break;
+			dstream<<getDesc()<<"Streamed "<<received_size
+					<<" bytes from TCP"<<std::endl;
+			SharedBuffer<u8> b(ba, received_size);
+			sbuf.push(b);
+			got_something = true;
+		}
+		if(got_something) for(;;){
+			SharedBuffer<u8> init_buf = sbuf.peek(4);
+			//dstream<<"a: "<<init_buf.getSize()<<std::endl;
+			if(init_buf.getSize() != 4)
+				break;
+			u32 size = readU32(&init_buf[0]);
+			//dstream<<"b: "<<size<<std::endl;
+			if(sbuf.size() < size)
+				break;
+			sbuf.pop(4);
+			SharedBuffer<u8> data = sbuf.pop(size);
+			dstream<<getDesc()<<"Received "<<data.getSize()
+					<<" bytes through TCP"<<std::endl;
+			ConnectionEvent e;
+			e.dataReceived(peer_id, data);
+			putEvent(e);
 		}
 	}
 }
@@ -1111,11 +1164,11 @@ void ConnectionThread::connect(Address address)
 	c.send(PEER_ID_SERVER, 0, data, true);
 	putCommand(c);
 
-	// Connect to server using TCP
+	// Connect to server using TCP (initialization will be sent later)
 	try{
 		SharedPtr<TCPSocket> tcp = new TCPSocket(m_addr_family == AF_INET6);
 		tcp->Connect(address);
-		m_peer_tcps[PEER_ID_SERVER] = tcp;
+		m_initial_peer_tcps[PEER_ID_SERVER] = tcp;
 	} catch(SocketException &e){
 		derr_con<<getDesc()<<" failed to connect with TCP to "
 				<<address.serializeString()<<std::endl;
@@ -1160,6 +1213,25 @@ void ConnectionThread::send(u16 peer_id, u8 channelnum,
 	Peer *peer = getPeerNoEx(peer_id);
 	if(peer == NULL)
 		return;
+
+	// Attempt to send via TCP if reliable is requested
+	if(reliable){
+		std::map<u16, SharedPtr<TCPSocket> >::iterator it =
+				m_peer_tcps.find(peer_id);
+		if(it != m_peer_tcps.end()){
+			SharedPtr<TCPSocket> &socket = it->second;
+			/*dout_con<<getDesc()<<"Sending "<<data.getSize()
+					<<" bytes through TCP"<<std::endl;*/
+			dstream<<getDesc()<<"Sending "<<data.getSize()
+					<<" bytes through TCP"<<std::endl;
+			u8 init_buf[4];
+			writeU32(&init_buf[0], data.getSize());
+			socket->Send(init_buf, 4);
+			socket->Send(&data[0], data.getSize());
+			return;
+		}
+	}
+
 	Channel *channel = &(peer->channels[channelnum]);
 
 	u32 chunksize_max = m_max_packet_size - BASE_HEADER_SIZE;
@@ -1425,6 +1497,24 @@ SharedBuffer<u8> ConnectionThread::processPacket(Channel *channel,
 			{
 				dout_con<<"changing."<<std::endl;
 				SetPeerID(peer_id_new);
+
+				try{
+					if(m_initial_peer_tcps.find(peer_id) !=
+							m_initial_peer_tcps.end())
+					{
+						derr_con<<getDesc()<<" sending TCP initialization"<<std::endl;
+						SharedPtr<TCPSocket> tcp = m_initial_peer_tcps[peer_id];
+						u8 buf[6];
+						writeU32(&buf[0], m_protocol_id);
+						writeU16(&buf[4], peer_id_new);
+						tcp->Send(buf, 6);
+						m_peer_tcps[peer_id] = tcp;
+						m_initial_peer_tcps.erase(peer_id);
+					}
+				} catch(SocketException &e){
+					derr_con<<getDesc()<<" failed to send TCP initialization"<<std::endl;
+					m_initial_peer_tcps.erase(peer_id);
+				}
 			}
 			throw ProcessedSilentlyException("Got a SET_PEER_ID");
 		}
@@ -1605,6 +1695,8 @@ bool ConnectionThread::deletePeer(u16 peer_id, bool timeout)
 
 	delete m_peers[peer_id];
 	m_peers.erase(peer_id);
+	m_peer_tcps.erase(peer_id);
+	m_peer_streambufs.erase(peer_id);
 	return true;
 }
 

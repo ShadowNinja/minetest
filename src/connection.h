@@ -30,6 +30,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <iostream>
 #include <fstream>
 #include <list>
+#include <deque>
+#include <vector>
 #include <map>
 
 namespace con
@@ -131,6 +133,37 @@ struct BufferedPacket
 	float time; // Seconds from buffering the packet or re-sending
 	float totaltime; // Seconds from buffering the packet
 	Address address; // Sender or destination
+};
+
+struct StreamBuffer
+{
+	std::deque<u8> buffer;
+
+	void push(SharedBuffer<u8> data)
+	{
+		buffer.insert(buffer.end(), &data[0], &data[0]+data.getSize());
+	}
+	u32 size()
+	{
+		return buffer.size();
+	}
+	SharedBuffer<u8> peek(u32 req_size)
+	{
+		if(size() < req_size)
+			return SharedBuffer<u8>(0);
+		SharedBuffer<u8> data(req_size);
+		std::copy(buffer.begin(), buffer.begin() + req_size, &data[0]);
+		return data;
+	}
+	SharedBuffer<u8> pop(u32 req_size)
+	{
+		if(size() < req_size)
+			return SharedBuffer<u8>(0);
+		SharedBuffer<u8> data(req_size);
+		std::copy(buffer.begin(), buffer.begin() + req_size, &data[0]);
+		buffer.erase(buffer.begin(), buffer.begin() + req_size);
+		return data;
+	}
 };
 
 // This adds the base headers to the data and makes a packet out of it
@@ -616,7 +649,9 @@ private:
 	bool m_is_listening;
 	TCPSocket m_bound_tcp;
 	std::list<SharedPtr<TCPSocket> > m_unknown_tcps;
+	std::map<u16, SharedPtr<TCPSocket> > m_initial_peer_tcps;
 	std::map<u16, SharedPtr<TCPSocket> > m_peer_tcps;
+	std::map<u16, StreamBuffer> m_peer_streambufs;
 
 	void SetPeerID(u16 id){ m_peer_id = id; }
 	u32 GetProtocolID(){ return m_protocol_id; }
