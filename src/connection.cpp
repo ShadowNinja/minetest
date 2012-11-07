@@ -1502,7 +1502,8 @@ SharedBuffer<u8> ConnectionThread::processPacket(Channel *channel,
 					if(m_initial_peer_tcps.find(peer_id) !=
 							m_initial_peer_tcps.end())
 					{
-						derr_con<<getDesc()<<" sending TCP initialization"<<std::endl;
+						derr_con<<getDesc()<<" sending TCP initialization as "
+								<<peer_id_new<<" to "<<peer_id<<std::endl;
 						SharedPtr<TCPSocket> tcp = m_initial_peer_tcps[peer_id];
 						u8 buf[6];
 						writeU32(&buf[0], m_protocol_id);
