@@ -1323,6 +1323,8 @@ void the_game(
 			core::rect<s32>(0,0,0,0),
 			//false, false); // Disable word wrap as of now
 			false, true);
+	// Add a background to make the chat easier to read in front of something white
+	guitext_chat->setBackgroundColor(video::SColor(80,0,0,0));
 	// Remove stale "recent" chat messages from previous connections
 	chat_backend.clearRecentChat();
 	// Chat backend and console
@@ -3051,7 +3053,9 @@ void the_game(
 			core::rect<s32> rect(
 				10,
 				chat_y,
-				screensize.X - 10,
+				MYMIN(guitext_chat->getActiveFont()
+					->getDimension(recent_chat.c_str()).Width + 15,
+					screensize.X - 10),
 				chat_y + guitext_chat->getTextHeight()
 			);
 			guitext_chat->setRelativePosition(rect);
