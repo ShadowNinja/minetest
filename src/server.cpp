@@ -498,7 +498,7 @@ void RemoteClient::GetNextBlocks(Server *server, float dtime,
 						nearest_emergefull_d = d;
 					goto queue_full_break;
 				}
-				
+
 				// get next one.
 				continue;
 			}
@@ -692,10 +692,10 @@ Server::Server(
 	Settings gamedefaults;
 	getGameMinetestConfig(gamespec.path, gamedefaults);
 	override_default_settings(g_settings, &gamedefaults);
-	
+
 	// Create emerge manager
 	m_emerge = new EmergeManager(this);
-	
+
 	// Create rollback manager
 	std::string rollback_path = m_path_world+DIR_DELIM+"rollback.txt";
 	m_rollback = createRollbackManager(rollback_path, this);
@@ -708,7 +708,7 @@ Server::Server(
 	m_mods = modconf.getMods();
 	std::vector<ModSpec> unsatisfied_mods = modconf.getUnsatisfiedMods();
 	// complain about mods with unsatisfied dependencies
-	if(!modconf.isConsistent())	
+	if(!modconf.isConsistent())
 	{
 		for(std::vector<ModSpec>::iterator it = unsatisfied_mods.begin();
 			it != unsatisfied_mods.end(); ++it)
@@ -727,10 +727,10 @@ Server::Server(
 	worldmt_settings.readConfigFile(worldmt.c_str());
 	std::vector<std::string> names = worldmt_settings.getNames();
 	std::set<std::string> load_mod_names;
-	for(std::vector<std::string>::iterator it = names.begin(); 
+	for(std::vector<std::string>::iterator it = names.begin();
 		it != names.end(); ++it)
-	{	
-		std::string name = *it;  
+	{
+		std::string name = *it;
 		if(name.compare(0,9,"load_mod_")==0 && worldmt_settings.getBool(name))
 			load_mod_names.insert(name.substr(9));
 	}
@@ -742,7 +742,7 @@ Server::Server(
 			it != unsatisfied_mods.end(); ++it)
 		load_mod_names.erase((*it).name);
 	if(!load_mod_names.empty())
-	{		
+	{
 		errorstream << "The following mods could not be found:";
 		for(std::set<std::string>::iterator it = load_mod_names.begin();
 			it != load_mod_names.end(); ++it)
@@ -805,7 +805,7 @@ Server::Server(
 	// Initialize Environment
 	ServerMap *servermap = new ServerMap(path_world, this, m_emerge);
 	m_env = new ServerEnvironment(servermap, m_script, this, this);
-	
+
 	m_emerge->initMapgens(servermap->getMapgenParams());
 
 	// Give environment reference to scripting api
@@ -3004,7 +3004,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			}
 
 		} // action == 4
-		
+
 
 		/*
 			Catch invalid actions
@@ -4668,7 +4668,7 @@ u32 Server::hudAdd(Player *player, HudElement *form) {
 		player->hud[id] = form;
 	else
 		player->hud.push_back(form);
-	
+
 	SendHUDAdd(player->peer_id, id, form);
 	return id;
 }
@@ -4679,7 +4679,7 @@ bool Server::hudRemove(Player *player, u32 id) {
 
 	delete player->hud[id];
 	player->hud[id] = NULL;
-	
+
 	SendHUDRemove(player->peer_id, id);
 	return true;
 }

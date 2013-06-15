@@ -249,7 +249,7 @@ ContentFeatures read_content_features(lua_State *L, int index)
 	lua_getfield(L, index, "on_rightclick");
 	f.rightclickable = lua_isfunction(L, -1);
 	lua_pop(L, 1);
-	
+
 	/* Name */
 	getstringfield(L, index, "name", f.name);
 

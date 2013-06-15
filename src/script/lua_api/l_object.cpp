@@ -963,7 +963,7 @@ int ObjectRef::l_hud_set_flags(lua_State *L)
 	u32 flags = 0;
 	u32 mask  = 0;
 	bool flag;
-	
+
 	const EnumString *esp = es_HudBuiltinElement;
 	for (int i = 0; esp[i].str; i++) {
 		if (getboolfield(L, 2, esp[i].str, flag)) {

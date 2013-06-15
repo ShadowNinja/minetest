@@ -46,15 +46,15 @@ public:
         size_t n;
         std::string palautus;
         if (p < tek.size())
-        {  
+        {
             //std::cout<<"\tp<tek.size()"<<std::endl;
             if ((n = tek.find(plop, p)) == std::string::npos || plop == "")
-            {  
+            {
                 //std::cout<<"\t\tn == string::npos || plop == \"\""<<std::endl;
                 n = tek.size();
             }
             else
-            {  
+            {
                 //std::cout<<"\t\tn != string::npos"<<std::endl;
             }
             palautus = tek.substr(p, n-p);
@@ -65,14 +65,14 @@ public:
 		//std::cout<<"palautus=\""<<palautus<<"\""<<std::endl;
         return palautus;
     }
-    
+
     // Returns substr of tek up to the next occurence of plop that isn't escaped with '\'
     std::string next_esc(std::string plop) {
 		size_t n, realp;
-		
+
     	if (p >= tek.size())
     		return "";
-		
+
 		realp = p;
 		do {
 			n = tek.find(plop, p);
@@ -80,10 +80,10 @@ public:
 				n = tek.length();
 			p = n + plop.length();
 		} while (n > 0 && tek[n - 1] == '\\');
-		
+
 		return tek.substr(realp, n - realp);
     }
-    
+
 	void skip_over(std::string chars){
 		while(p < tek.size()){
 			bool is = false;
@@ -128,15 +128,15 @@ public:
         size_t n;
         std::wstring palautus;
         if (p < tek.size())
-        {  
+        {
             //std::cout<<"\tp<tek.size()"<<std::endl;
             if ((n = tek.find(plop, p)) == std::wstring::npos || plop == L"")
-            {  
+            {
                 //std::cout<<"\t\tn == string::npos || plop == \"\""<<std::endl;
                 n = tek.size();
             }
             else
-            {  
+            {
                 //std::cout<<"\t\tn != string::npos"<<std::endl;
             }
             palautus = tek.substr(p, n-p);
@@ -147,13 +147,13 @@ public:
 		//std::cout<<"palautus=\""<<palautus<<"\""<<std::endl;
         return palautus;
     }
-    
+
     std::wstring next_esc(std::wstring plop) {
 		size_t n, realp;
-		
+
     	if (p >= tek.size())
     		return L"";
-		
+
 		realp = p;
 		do {
 			n = tek.find(plop, p);
@@ -161,10 +161,10 @@ public:
 				n = tek.length();
 			p = n + plop.length();
 		} while (n > 0 && tek[n - 1] == '\\');
-		
+
 		return tek.substr(realp, n - realp);
     }
-    
+
     bool atend(){
         if(p>=tek.size()) return true;
         return false;
@@ -177,7 +177,7 @@ public:
 inline std::string trim(const std::string &s)
 {
 	std::string str = s;
-    while( 
+    while(
             str.length()>0
             &&
             (
@@ -191,7 +191,7 @@ inline std::string trim(const std::string &s)
              str.substr(str.length()-1,  1)=="\n"
             )
          )
-    {  
+    {
         if      (str.substr(0,              1)==" ")
 			str = str.substr(1,str.length()-1);
         else if (str.substr(0,              1)=="\t")

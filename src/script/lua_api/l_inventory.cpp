@@ -453,7 +453,7 @@ int ModApiInventory::l_get_inventory(lua_State *L)
 			InvRef::create(L, loc);
 		else
 			lua_pushnil(L);
-		return 1;	
+		return 1;
 		// END NO_MAP_LOCK_REQUIRED;
 	}
 }

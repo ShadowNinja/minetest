@@ -79,7 +79,7 @@ void GUIPasswordChange::regenerateGui(v2u32 screensize)
 		Remove stuff
 	*/
 	removeChildren();
-	
+
 	/*
 		Calculate new sizes and positions
 	*/
@@ -89,7 +89,7 @@ void GUIPasswordChange::regenerateGui(v2u32 screensize)
 			screensize.X/2 + 580/2,
 			screensize.Y/2 + 300/2
 	);
-	
+
 	DesiredRect = rect;
 	recalculateAbsolutePosition(false);
 
@@ -112,7 +112,7 @@ void GUIPasswordChange::regenerateGui(v2u32 screensize)
 	{
 		core::rect<s32> rect(0, 0, 230, 30);
 		rect += topleft_client + v2s32(160, ypos);
-		gui::IGUIEditBox *e = 
+		gui::IGUIEditBox *e =
 		Environment->addEditBox(L"", rect, true, this, ID_oldPassword);
 		Environment->setFocus(e);
 		e->setPasswordBox(true);
@@ -130,7 +130,7 @@ void GUIPasswordChange::regenerateGui(v2u32 screensize)
 	{
 		core::rect<s32> rect(0, 0, 230, 30);
 		rect += topleft_client + v2s32(160, ypos);
-		gui::IGUIEditBox *e = 
+		gui::IGUIEditBox *e =
 		Environment->addEditBox(L"", rect, true, this, ID_newPassword1);
 		e->setPasswordBox(true);
 	}
@@ -147,7 +147,7 @@ void GUIPasswordChange::regenerateGui(v2u32 screensize)
 	{
 		core::rect<s32> rect(0, 0, 230, 30);
 		rect += topleft_client + v2s32(160, ypos);
-		gui::IGUIEditBox *e = 
+		gui::IGUIEditBox *e =
 		Environment->addEditBox(L"", rect, true, this, ID_newPassword2);
 		e->setPasswordBox(true);
 	}
@@ -167,7 +167,7 @@ void GUIPasswordChange::regenerateGui(v2u32 screensize)
 		core::rect<s32> rect(0, 0, 300, 20);
 		rect += topleft_client + v2s32(35, ypos);
 		wchar_t* text = wgettext("Passwords do not match!");
-		IGUIElement *e = 
+		IGUIElement *e =
 		Environment->addStaticText(
 			text,
 			rect, false, true, this, ID_message);
@@ -184,7 +184,7 @@ void GUIPasswordChange::drawMenu()
 	if (!skin)
 		return;
 	video::IVideoDriver* driver = Environment->getVideoDriver();
-	
+
 	video::SColor bgcolor(140,0,0,0);
 	driver->draw2DRectangle(bgcolor, AbsoluteRect, &AbsoluteClippingRect);
 

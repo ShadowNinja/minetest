@@ -155,7 +155,7 @@ struct ContentFeatures
 	*/
 #ifndef SERVER
 	// 0     1     2     3     4     5
-	// up    down  right left  back  front 
+	// up    down  right left  back  front
 	TileSpec tiles[6];
 	// Special tiles
 	// - Currently used for flowing liquids
@@ -238,7 +238,7 @@ struct ContentFeatures
 	/*
 		Methods
 	*/
-	
+
 	ContentFeatures();
 	~ContentFeatures();
 	void reset();
@@ -273,7 +273,7 @@ public:
 	virtual void getIds(const std::string &name, std::set<content_t> &result)
 			const=0;
 	virtual const ContentFeatures& get(const std::string &name) const=0;
-	
+
 	virtual void serialize(std::ostream &os, u16 protocol_version)=0;
 };
 

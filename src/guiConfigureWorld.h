@@ -62,7 +62,7 @@ private:
 
 	// list of world mods (flattened)
 	std::map<std::string, ModSpec> m_worldmods;
-	
+
 	// for each mod, the set of mods depending on it
 	std::multimap<std::string, std::string> m_reverse_depends;
 
@@ -79,7 +79,7 @@ private:
 	gui::IGUICheckBox* m_enabled_checkbox;
 	gui::IGUIListBox* m_dependencies_listbox;
 	gui::IGUIListBox* m_rdependencies_listbox;
-	void buildTreeView(std::map<std::string,ModSpec> mods, 
+	void buildTreeView(std::map<std::string,ModSpec> mods,
 					   gui::IGUITreeViewNode* node);
 	void adjustSidebar();
 	void enableAllMods(std::map<std::string,ModSpec> mods, bool enable);

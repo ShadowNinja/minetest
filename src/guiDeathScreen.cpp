@@ -70,7 +70,7 @@ void GUIDeathScreen::regenerateGui(v2u32 screensize)
 		Remove stuff
 	*/
 	removeChildren();
-	
+
 	/*
 		Calculate new sizes and positions
 	*/
@@ -80,7 +80,7 @@ void GUIDeathScreen::regenerateGui(v2u32 screensize)
 			screensize.X/2 + 500/2,
 			screensize.Y/2 + 200/2
 	);
-	
+
 	DesiredRect = rect;
 	recalculateAbsolutePosition(false);
 
@@ -102,7 +102,7 @@ void GUIDeathScreen::regenerateGui(v2u32 screensize)
 		core::rect<s32> rect(0, 0, 140, 30);
 		rect = rect + v2s32(size.X/2-140/2, size.Y/2-30/2+25);
 		wchar_t* text = wgettext("Respawn");
-		gui::IGUIElement *e = 
+		gui::IGUIElement *e =
 		Environment->addButton(rect, this, 257,
 			text);
 		delete[] text;
@@ -117,7 +117,7 @@ void GUIDeathScreen::drawMenu()
 	if (!skin)
 		return;
 	video::IVideoDriver* driver = Environment->getVideoDriver();
-	
+
 	{
 		video::SColor color(180,50,0,0);
 		driver->draw2DRectangle(color,

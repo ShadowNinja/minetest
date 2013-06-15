@@ -100,7 +100,7 @@ public:
 		m_name_conflicts()
 	{}
 
-		
+
 	ModConfiguration(std::string worldpath);
 
 	// checks if all dependencies are fullfilled.

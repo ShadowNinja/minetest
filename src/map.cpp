@@ -1663,7 +1663,7 @@ void Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 		v3s16 p0 = m_transforming_liquid.pop_front();
 		u16 total_level = 0;
 		// surrounding flowing liquid nodes
-		NodeNeighbor neighbors[7]; 
+		NodeNeighbor neighbors[7];
 		// current level of every block
 		s8 liquid_levels[7] = {-1, -1, -1, -1, -1, -1, -1};
 		 // target levels
@@ -1729,7 +1729,7 @@ void Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 					}
 					break;
 			}
-			
+
 			if (nb.l && nb.t == NEIGHBOR_SAME_LEVEL)
 				++can_liquid_same_level;
 			if (liquid_levels[i] > 0)
@@ -1764,8 +1764,8 @@ void Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 			liquid_levels[D_BOTTOM] == LIQUID_LEVEL_SOURCE &&
 			total_level >= LIQUID_LEVEL_SOURCE * can_liquid_same_level-
 			(can_liquid_same_level - relax) &&
-			can_liquid_same_level >= relax + 1) { 
-			total_level = LIQUID_LEVEL_SOURCE * can_liquid_same_level; 
+			can_liquid_same_level >= relax + 1) {
+			total_level = LIQUID_LEVEL_SOURCE * can_liquid_same_level;
 		}
 
 		// prevent lakes in air above unloaded blocks
@@ -1774,9 +1774,9 @@ void Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 		}
 
 		// calculate self level 5 blocks
-		u8 want_level = 
+		u8 want_level =
 			  total_level >= LIQUID_LEVEL_SOURCE * can_liquid_same_level
-			? LIQUID_LEVEL_SOURCE 
+			? LIQUID_LEVEL_SOURCE
 			: total_level / can_liquid_same_level;
 		total_level -= want_level * can_liquid_same_level;
 
@@ -1829,7 +1829,7 @@ void Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 
 		/*
 		if (total_level > 0) //|| flowed != volume)
-			infostream <<" AFTER level=" << (int)total_level 
+			infostream <<" AFTER level=" << (int)total_level
 			//<< " flowed="<<flowed<< " volume=" << volume
 			<< " wantsame="<<(int)want_level<< " top="
 			<< (int)liquid_levels_want[D_TOP]<< " topwas="
@@ -1839,7 +1839,7 @@ void Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 
 		u8 changed = 0;
 		for (u16 i = 0; i < 7; i++) {
-			if (liquid_levels_want[i] < 0 || !neighbors[i].l) 
+			if (liquid_levels_want[i] < 0 || !neighbors[i].l)
 				continue;
 			MapNode & n0 = neighbors[i].n;
 			p0 = neighbors[i].p;
@@ -1862,7 +1862,7 @@ void Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 			} else {
 				new_node_level = liquid_levels_want[i];
 			}
-			
+
 			if (new_node_level >= LIQUID_LEVEL_SOURCE)
 				new_node_content = liquid_kind;
 			else if (new_node_level > 0)
@@ -1885,9 +1885,9 @@ void Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 				if not, just continue with the next node.
 			 */
 			if (
-				 new_node_content == n0.getContent() 
+				 new_node_content == n0.getContent()
 				&& (nodemgr->get(n0.getContent()).liquid_type != LIQUID_FLOWING ||
-				 ((n0.param2 & LIQUID_LEVEL_MASK) == (u8)new_node_level 
+				 ((n0.param2 & LIQUID_LEVEL_MASK) == (u8)new_node_level
 				 //&& ((n0.param2 & LIQUID_FLOW_DOWN_MASK) ==
 				 //LIQUID_FLOW_DOWN_MASK) == flowing_down
 				 ))
@@ -1916,7 +1916,7 @@ void Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 			<<new_node_content<< " p2="<<(int)n0.param2<< " nl="
 			<<(int)new_node_level<<std::endl;
 			*/
-			
+
 			n0.setContent(new_node_content);
 			// Find out whether there is a suspect for this action
 			std::string suspect;
@@ -2594,7 +2594,7 @@ bool ServerMap::initBlockMake(BlockMakeData *data, v3s16 blockpos)
 		//TimeTaker timer("initBlockMake() initialEmerge");
 		data->vmanip->initialEmerge(bigarea_blocks_min, bigarea_blocks_max);
 	}
-	
+
 	// Ensure none of the blocks to be generated were marked as containing CONTENT_IGNORE
 /*	for (s16 z = blockpos_min.Z; z <= blockpos_max.Z; z++) {
 		for (s16 y = blockpos_min.Y; y <= blockpos_max.Y; y++) {
@@ -3493,7 +3493,7 @@ void ServerMap::loadMapMeta()
 			break;
 		params.parseConfigLine(line);
 	}
-	
+
 	MapgenParams *mgparams;
 	try {
 		mgparams = m_emerge->getParamsFromSettings(&params);
@@ -3502,7 +3502,7 @@ void ServerMap::loadMapMeta()
 				   << e.what() << std::endl;
 		mgparams = NULL;
 	}
-	
+
 	if (mgparams) {
 		if (m_mgparams)
 			delete m_mgparams;
@@ -4252,7 +4252,7 @@ void ManualMapVoxelManipulator::initialEmerge(
 		if(block_data_inexistent)
 		{
 			flags |= VMANIP_BLOCK_DATA_INEXIST;
-			
+
 			/*
 				Mark area inexistent
 			*/

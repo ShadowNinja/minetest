@@ -427,7 +427,7 @@ void tree_leaves_placement(ManualMapVoxelManipulator &vmanip, v3f p0,
 	u32 vi = vmanip.m_area.index(p1);
 	if(vmanip.m_data[vi].getContent() != CONTENT_AIR
 			&& vmanip.m_data[vi].getContent() != CONTENT_IGNORE)
-		return;	
+		return;
 	if (tree_definition.fruit_chance>0)
 	{
 		if (ps.range(1,100) > 100-tree_definition.fruit_chance)
@@ -530,7 +530,7 @@ void make_jungletree(VoxelManipulator &vmanip, v3s16 p0,
 		v3s16 p2 = p0 + v3s16(x,-1,z);
 		u32 vi1 = vmanip.m_area.index(p1);
 		u32 vi2 = vmanip.m_area.index(p2);
-		
+
 		if (vmanip.m_area.contains(p2) &&
 			vmanip.m_data[vi2].getContent() == CONTENT_AIR)
 			vmanip.m_data[vi2] = treenode;

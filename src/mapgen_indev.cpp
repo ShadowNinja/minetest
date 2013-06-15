@@ -81,7 +81,7 @@ void NoiseIndev::transformNoiseMapFarScale(float xx, float yy, float zz) {
         }
 }
 
-MapgenIndev::MapgenIndev(int mapgenid, MapgenIndevParams *params, EmergeManager *emerge) 
+MapgenIndev::MapgenIndev(int mapgenid, MapgenIndevParams *params, EmergeManager *emerge)
 	: MapgenV6(mapgenid, params, emerge)
 {
 	noiseindev_terrain_base    = new NoiseIndev(&params->npindev_terrain_base,   seed, csize.X, csize.Z);
@@ -170,7 +170,7 @@ bool MapgenIndevParams::readParams(Settings *settings) {
 	freq_desert = settings->getFloat("mgv6_freq_desert");
 	freq_beach  = settings->getFloat("mgv6_freq_beach");
 
-	bool success = 
+	bool success =
 		settings->getNoiseIndevParams("mgindev_np_terrain_base",   npindev_terrain_base)   &&
 		settings->getNoiseIndevParams("mgindev_np_terrain_higher", npindev_terrain_higher) &&
 		settings->getNoiseIndevParams("mgindev_np_steepness",      npindev_steepness)      &&
@@ -208,7 +208,7 @@ void MapgenIndevParams::writeParams(Settings *settings) {
 float MapgenIndev::baseTerrainLevelFromNoise(v2s16 p) {
 	if (flags & MG_FLAT)
 		return water_level;
-		
+
 	float terrain_base   = NoisePerlin2DPosOffset(noiseindev_terrain_base->npindev,
 							p.X, 0.5, p.Y, 0.5, seed);
 	float terrain_higher = NoisePerlin2DPosOffset(noiseindev_terrain_higher->npindev,
@@ -225,12 +225,12 @@ float MapgenIndev::baseTerrainLevelFromNoise(v2s16 p) {
 float MapgenIndev::baseTerrainLevelFromMap(int index) {
 	if (flags & MG_FLAT)
 		return water_level;
-	
+
 	float terrain_base   = noiseindev_terrain_base->result[index];
 	float terrain_higher = noiseindev_terrain_higher->result[index];
 	float steepness      = noiseindev_steepness->result[index];
 	float height_select  = noise_height_select->result[index];
-	
+
 	return baseTerrainLevel(terrain_base, terrain_higher,
 							steepness,    height_select);
 }
@@ -238,11 +238,11 @@ float MapgenIndev::baseTerrainLevelFromMap(int index) {
 float MapgenIndev::getMudAmount(int index) {
 	if (flags & MG_FLAT)
 		return AVERAGE_MUD_AMOUNT;
-		
+
 	/*return ((float)AVERAGE_MUD_AMOUNT + 2.0 * noise2d_perlin(
 			0.5+(float)p.X/200, 0.5+(float)p.Y/200,
 			seed+91013, 3, 0.55));*/
-	
+
 	return noiseindev_mud->result[index];
 }
 
@@ -255,15 +255,15 @@ void MapgenIndev::generateCaves(int max_stone_y) {
 	u32 bruises_count = 1;
 	PseudoRandom ps(blockseed + 21343);
 	PseudoRandom ps2(blockseed + 1032);
-	
+
 	if (ps.range(1, 6) == 1)
 		bruises_count = ps.range(0, ps.range(0, 2));
-	
+
 	if (getBiome(v2s16(node_min.X, node_min.Z)) == BT_DESERT) {
 		caves_count   /= 3;
 		bruises_count /= 3;
 	}
-	
+
 	for (u32 i = 0; i < caves_count + bruises_count; i++) {
 		bool large_cave = (i >= caves_count);
 		CaveIndev cave(this, &ps, &ps2, node_min, large_cave);

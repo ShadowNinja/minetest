@@ -98,7 +98,7 @@ void GUICreateWorld::regenerateGui(v2u32 screensize)
 		Remove stuff
 	*/
 	removeChildren();
-	
+
 	/*
 		Calculate new sizes and positions
 	*/
@@ -108,7 +108,7 @@ void GUICreateWorld::regenerateGui(v2u32 screensize)
 			screensize.X/2 + 580/2,
 			screensize.Y/2 + 300/2
 	);
-	
+
 	DesiredRect = rect;
 	recalculateAbsolutePosition(false);
 
@@ -127,7 +127,7 @@ void GUICreateWorld::regenerateGui(v2u32 screensize)
 	{
 		core::rect<s32> rect(0, 0, 300, 30);
 		rect = rect + v2s32(100, 0) + topleft;
-		gui::IGUIElement *e = 
+		gui::IGUIElement *e =
 		Environment->addEditBox(name.c_str(), rect, true, this, GUI_ID_NAME_INPUT);
 		Environment->setFocus(e);
 
@@ -189,7 +189,7 @@ void GUICreateWorld::drawMenu()
 	if (!skin)
 		return;
 	video::IVideoDriver* driver = Environment->getVideoDriver();
-	
+
 	video::SColor bgcolor(140,0,0,0);
 	driver->draw2DRectangle(bgcolor, AbsoluteRect, &AbsoluteClippingRect);
 

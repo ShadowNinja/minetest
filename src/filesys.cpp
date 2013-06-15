@@ -32,8 +32,8 @@ namespace fs
 #include <windows.h>
 #include <stdio.h>
 #include <malloc.h>
-#include <tchar.h> 
-#include <wchar.h> 
+#include <tchar.h>
+#include <wchar.h>
 #include <stdio.h>
 
 #define BUFSIZE MAX_PATH
@@ -72,12 +72,12 @@ std::vector<DirListNode> GetDirListing(std::string pathstring)
 	// Find the first file in the directory.
 	hFind = FindFirstFile(DirSpec, &FindFileData);
 
-	if (hFind == INVALID_HANDLE_VALUE) 
+	if (hFind == INVALID_HANDLE_VALUE)
 	{
 		retval = (-1);
 		goto Cleanup;
-	} 
-	else 
+	}
+	else
 	{
 		// NOTE:
 		// Be very sure to not include '..' in the results, it will
@@ -90,7 +90,7 @@ std::vector<DirListNode> GetDirListing(std::string pathstring)
 			listing.push_back(node);
 
 		// List all the other files in the directory.
-		while (FindNextFile(hFind, &FindFileData) != 0) 
+		while (FindNextFile(hFind, &FindFileData) != 0)
 		{
 			DirListNode node;
 			node.name = FindFileData.cFileName;
@@ -101,7 +101,7 @@ std::vector<DirListNode> GetDirListing(std::string pathstring)
 
 		dwError = GetLastError();
 		FindClose(hFind);
-		if (dwError != ERROR_NO_MORE_FILES) 
+		if (dwError != ERROR_NO_MORE_FILES)
 		{
 			errorstream<<"GetDirListing: FindNextFile error. Error is "
 					<<dwError<<std::endl;
@@ -119,7 +119,7 @@ Cleanup:
 	//for(unsigned int i=0; i<listing.size(); i++){
 	//	infostream<<listing[i].name<<(listing[i].dir?" (dir)":" (file)")<<std::endl;
 	//}
-	
+
 	return listing;
 }
 
@@ -306,11 +306,11 @@ bool RecursiveDelete(std::string path)
 	/*
 		Execute the 'rm' command directly, by fork() and execve()
 	*/
-	
+
 	infostream<<"Removing \""<<path<<"\""<<std::endl;
 
 	//return false;
-	
+
 	pid_t child_pid = fork();
 
 	if(child_pid == 0)
@@ -328,9 +328,9 @@ bool RecursiveDelete(std::string path)
 
 		verbosestream<<"Executing '"<<argv[0]<<"' '"<<argv[1]<<"' '"
 				<<argv[2]<<"'"<<std::endl;
-		
+
 		execv(argv[0], argv);
-		
+
 		// Execv shouldn't return. Failed.
 		_exit(1);
 	}

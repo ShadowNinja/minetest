@@ -38,7 +38,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 /////////////////// Ore generation flags
 // Use absolute value of height to determine ore placement
-#define OREFLAG_ABSHEIGHT 0x01 
+#define OREFLAG_ABSHEIGHT 0x01
 // Use 3d noise to get density of ore placement, instead of just the position
 #define OREFLAG_DENSITY   0x02 // not yet implemented
 // For claylike ore types, place ore if the number of surrounding
@@ -72,7 +72,7 @@ struct MapgenParams {
 		chunksize   = 5;
 		flags       = MG_TREES | MG_CAVES | MGV6_BIOME_BLEND;
 	}
-	
+
 	virtual bool readParams(Settings *settings) = 0;
 	virtual void writeParams(Settings *settings) = 0;
 	virtual ~MapgenParams() {}
@@ -133,19 +133,19 @@ public:
 	s16 height_max;
 	u8 ore_param2;		// to set node-specific attributes
 	u32 flags;          // attributes for this ore
-	float nthresh;      // threshhold for noise at which an ore is placed 
+	float nthresh;      // threshhold for noise at which an ore is placed
 	NoiseParams *np;    // noise for distribution of clusters (NULL for uniform scattering)
 	Noise *noise;
-	
+
 	Ore() {
 		ore     = CONTENT_IGNORE;
 		wherein = CONTENT_IGNORE;
 		np      = NULL;
 		noise   = NULL;
 	}
-	
+
 	virtual ~Ore();
-	
+
 	void resolveNodeNames(INodeDefManager *ndef);
 	void placeOre(Mapgen *mg, u32 blockseed, v3s16 nmin, v3s16 nmax);
 	virtual void generate(ManualMapVoxelManipulator *vm, int seed,

@@ -23,7 +23,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 // Middle-raised variation of a_n+1 = a_n * 0.786
 // Length of LIGHT_MAX+1 means LIGHT_MAX is the last value.
 // LIGHT_SUN is read as LIGHT_MAX from here.
-u8 light_decode_table[LIGHT_MAX+1] = 
+u8 light_decode_table[LIGHT_MAX+1] =
 {
 8,
 11+2,
@@ -75,7 +75,7 @@ L.reverse()
 for i in L:
     stdout.write(str(i)+",\n")
 */
-u8 light_decode_table[LIGHT_MAX+1] = 
+u8 light_decode_table[LIGHT_MAX+1] =
 {
 23,
 27,
@@ -100,7 +100,7 @@ u8 light_decode_table[LIGHT_MAX+1] =
 // a_n+1 = a_n * 0.786
 // Length of LIGHT_MAX+1 means LIGHT_MAX is the last value.
 // LIGHT_SUN is read as LIGHT_MAX from here.
-u8 light_decode_table[LIGHT_MAX+1] = 
+u8 light_decode_table[LIGHT_MAX+1] =
 {
 8,
 11,
@@ -122,7 +122,7 @@ u8 light_decode_table[LIGHT_MAX+1] =
 
 #if 0
 // Use for debugging in dark
-u8 light_decode_table[LIGHT_MAX+1] = 
+u8 light_decode_table[LIGHT_MAX+1] =
 {
 58,
 64,
@@ -143,7 +143,7 @@ u8 light_decode_table[LIGHT_MAX+1] =
 #endif
 
 // This is reasonable with classic lighting with a light source
-/*u8 light_decode_table[LIGHT_MAX+1] = 
+/*u8 light_decode_table[LIGHT_MAX+1] =
 {
 2,
 3,
@@ -167,7 +167,7 @@ u8 light_decode_table[LIGHT_MAX+1] =
 // NOTE: This doesn't really work that well because this defines
 //       LIGHT_MAX as dimmer than LIGHT_SUN
 // NOTE: Uh, this has had 34 left out; forget this.
-/*u8 light_decode_table[LIGHT_MAX+1] = 
+/*u8 light_decode_table[LIGHT_MAX+1] =
 {
 8,
 11,
@@ -187,7 +187,7 @@ u8 light_decode_table[LIGHT_MAX+1] =
 };*/
 
 // This was a quick try of more light, manually quickly made
-/*u8 light_decode_table[LIGHT_MAX+1] = 
+/*u8 light_decode_table[LIGHT_MAX+1] =
 {
 0,
 7,
@@ -207,7 +207,7 @@ u8 light_decode_table[LIGHT_MAX+1] =
 };*/
 
 // This was used for a long time, manually made
-/*u8 light_decode_table[LIGHT_MAX+1] = 
+/*u8 light_decode_table[LIGHT_MAX+1] =
 {
 0,
 6,
@@ -226,7 +226,7 @@ u8 light_decode_table[LIGHT_MAX+1] =
 255,
 };*/
 
-/*u8 light_decode_table[LIGHT_MAX+1] = 
+/*u8 light_decode_table[LIGHT_MAX+1] =
 {
 0,
 3,
@@ -244,7 +244,7 @@ u8 light_decode_table[LIGHT_MAX+1] =
 215,
 255,
 };*/
-/*u8 light_decode_table[LIGHT_MAX+1] = 
+/*u8 light_decode_table[LIGHT_MAX+1] =
 {
 0,
 5,
@@ -263,7 +263,7 @@ u8 light_decode_table[LIGHT_MAX+1] =
 255,
 };*/
 // LIGHT_MAX is 14, 0-14 is 15 values
-/*u8 light_decode_table[LIGHT_MAX+1] = 
+/*u8 light_decode_table[LIGHT_MAX+1] =
 {
 0,
 9,
@@ -303,7 +303,7 @@ L.reverse()
 for i in L:
     stdout.write(str(i)+",\n")
 */
-u8 light_decode_table[LIGHT_MAX+1] = 
+u8 light_decode_table[LIGHT_MAX+1] =
 {
 0,
 6,

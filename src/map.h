@@ -485,7 +485,7 @@ public:
 private:
 	// Seed used for all kinds of randomness in generation
 	u64 m_seed;
-	
+
 	// Emerge manager
 	EmergeManager *m_emerge;
 

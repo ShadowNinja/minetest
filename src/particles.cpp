@@ -406,7 +406,7 @@ void ParticleSpawner::step(float dtime, ClientEnvironment &env)
 
 void allparticlespawners_step (float dtime, ClientEnvironment &env)
 {
-	for(std::map<u32, ParticleSpawner*>::iterator i = 
+	for(std::map<u32, ParticleSpawner*>::iterator i =
 			all_particlespawners.begin();
 			i != all_particlespawners.end();)
 	{
@@ -449,5 +449,5 @@ void clear_particles ()
 		(*i)->remove();
 		delete *i;
 		all_particles.erase(i);
-	}	
+	}
 }

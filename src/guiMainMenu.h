@@ -116,7 +116,7 @@ public:
 			MainMenuData *data,
 			IGameCallback *gamecallback);
 	~GUIMainMenu();
-	
+
 	void removeChildren();
 	// Remove and re-add (or reposition) stuff
 	void regenerateGui(v2u32 screensize);
@@ -130,7 +130,7 @@ public:
 	void deleteWorld(const std::vector<std::string> &paths);
 	int getTab();
 	void displayMessageMenu(std::wstring msg);
-	
+
 private:
 	MainMenuData *m_data;
 	bool m_accepted;

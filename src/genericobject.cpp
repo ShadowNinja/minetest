@@ -68,7 +68,7 @@ std::string gob_cmd_update_position(
 std::string gob_cmd_set_texture_mod(const std::string &mod)
 {
 	std::ostringstream os(std::ios::binary);
-	// command 
+	// command
 	writeU8(os, GENERIC_CMD_SET_TEXTURE_MOD);
 	// parameters
 	os<<serializeString(mod);
@@ -95,7 +95,7 @@ std::string gob_cmd_set_sprite(
 std::string gob_cmd_punched(s16 damage, s16 result_hp)
 {
 	std::ostringstream os(std::ios::binary);
-	// command 
+	// command
 	writeU8(os, GENERIC_CMD_PUNCHED);
 	// damage
 	writeS16(os, damage);
@@ -120,7 +120,7 @@ std::string gob_cmd_update_armor_groups(const ItemGroupList &armor_groups)
 std::string gob_cmd_update_physics_override(float physics_override_speed, float physics_override_jump, float physics_override_gravity)
 {
 	std::ostringstream os(std::ios::binary);
-	// command 
+	// command
 	writeU8(os, GENERIC_CMD_SET_PHYSICS_OVERRIDE);
 	// parameters
 	writeF1000(os, physics_override_speed);
@@ -132,7 +132,7 @@ std::string gob_cmd_update_physics_override(float physics_override_speed, float 
 std::string gob_cmd_update_animation(v2f frames, float frame_speed, float frame_blend)
 {
 	std::ostringstream os(std::ios::binary);
-	// command 
+	// command
 	writeU8(os, GENERIC_CMD_SET_ANIMATION);
 	// parameters
 	writeV2F1000(os, frames);
@@ -144,7 +144,7 @@ std::string gob_cmd_update_animation(v2f frames, float frame_speed, float frame_
 std::string gob_cmd_update_bone_position(std::string bone, v3f position, v3f rotation)
 {
 	std::ostringstream os(std::ios::binary);
-	// command 
+	// command
 	writeU8(os, GENERIC_CMD_SET_BONE_POSITION);
 	// parameters
 	os<<serializeString(bone);
@@ -156,7 +156,7 @@ std::string gob_cmd_update_bone_position(std::string bone, v3f position, v3f rot
 std::string gob_cmd_update_attachment(int parent_id, std::string bone, v3f position, v3f rotation)
 {
 	std::ostringstream os(std::ios::binary);
-	// command 
+	// command
 	writeU8(os, GENERIC_CMD_SET_ATTACHMENT);
 	// parameters
 	writeS16(os, parent_id);

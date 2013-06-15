@@ -41,7 +41,7 @@ public:
 			const std::vector<SubgameSpec> &games,
 			const std::string &initial_game);
 	~GUICreateWorld();
-	
+
 	void removeChildren();
 	/*
 		Remove and re-add (or reposition) stuff
@@ -53,7 +53,7 @@ public:
 	void acceptInput();
 
 	bool OnEvent(const SEvent& event);
-	
+
 private:
 	CreateWorldDest *m_dest;
 	std::vector<SubgameSpec> m_games;
