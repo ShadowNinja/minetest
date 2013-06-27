@@ -193,6 +193,9 @@
 #repeat_rightclick_time = 0.25
 # Make fog and sky colors depend on daytime (dawn/sunset) and view direction
 #directional_colored_fog = true
+# Increases performance on modern GPUs a lot
+# it may be needed to decrease client_unload_unused_data_timeout to limit the RAM usage
+#enable_vbo = false
 
 # Default timeout for cURL, in milliseconds
 # Only has an effect if compiled with cURL

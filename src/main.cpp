@@ -1448,7 +1448,7 @@ int main(int argc, char *argv[])
 		This changes the minimum allowed number of vertices in a VBO.
 		Default is 500.
 	*/
-	//driver->setMinHardwareBufferVertexCount(50);
+	driver->setMinHardwareBufferVertexCount(50);
 
 	// Create time getter
 	g_timegetter = new IrrlichtTimeGetter(device);

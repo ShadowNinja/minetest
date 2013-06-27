@@ -110,6 +110,8 @@ public:
 	
 	void updateCameraOffset(v3s16 camera_offset);
 
+	bool clearHardwareBuffer;
+
 private:
 	scene::SMesh *m_mesh;
 	IGameDef *m_gamedef;
