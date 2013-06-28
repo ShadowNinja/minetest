@@ -110,6 +110,18 @@ public:
 	
 	void updateCameraOffset(v3s16 camera_offset);
 
+
+	u32 getUsageTimer()
+	{
+		return m_usage_timer;
+	}
+	void incrementUsageTimer(float dtime)
+	{
+		m_usage_timer += dtime;
+	}
+
+	void setStatic();
+
 	bool clearHardwareBuffer;
 
 private:
@@ -140,6 +152,8 @@ private:
 	
 	// Camera offset info -> do we have to translate the mesh?
 	v3s16 m_camera_offset;
+
+	u32 m_usage_timer;
 };
 
 
