@@ -22,6 +22,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "lua_api/l_vmanip.h"
 #include "common/c_converter.h"
 #include "common/c_content.h"
+#include "cpp_api/s_security.h"
 #include "util/serialize.h"
 #include "server.h"
 #include "environment.h"
@@ -1050,6 +1051,10 @@ int ModApiMapgen::l_create_schematic(lua_State *L)
 	Schematic schem;
 	schem.m_ndef = getServer(L)->getNodeDefManager();
 
+	const char *filename = luaL_checkstring(L, 4);
+
+	CHECK_SECURE_PATH_OPTIONAL(L, filename);
+
 	Map *map = &(getEnv(L)->getMap());
 
 	v3s16 p1 = check_v3s16(L, 1);
@@ -1086,8 +1091,6 @@ int ModApiMapgen::l_create_schematic(lua_State *L)
 			lua_pop(L, 1);
 		}
 	}
-
-	const char *filename = luaL_checkstring(L, 4);
 
 	if (!schem.getSchematicFromMap(map, p1, p2)) {
 		errorstream << "create_schematic: failed to get schematic "
