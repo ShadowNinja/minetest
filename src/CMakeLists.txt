@@ -177,6 +177,23 @@ if(ENABLE_REDIS)
 endif(ENABLE_REDIS)
 
 
+option(ENABLE_POSTGRESQL "Enable PostgreSQL backend" TRUE)
+set(USE_POSTGRESQL 0)
+ 
+if(ENABLE_POSTGRESQL)
+	find_library(POSTGRESQL_LIBRARY pq)
+	find_path(POSTGRESQL_INCLUDE_DIR libpq-fe.h)
+	if(POSTGRESQL_LIBRARY AND POSTGRESQL_INCLUDE_DIR)
+		set(USE_POSTGRESQL 1)
+		message(STATUS "PostgreSQL backend enabled.")
+		include_directories(${POSTGRESQL_INCLUDE_DIR})
+	else()
+		set(USE_POSTGRESQL 0)
+		message(STATUS "PostgreSQL not found!")
+	endif()
+endif()
+
+
 find_package(SQLite3 REQUIRED)
 find_package(Json REQUIRED)
 
@@ -303,6 +320,7 @@ set(common_SRCS
 	database-leveldb.cpp
 	database-redis.cpp
 	database-sqlite3.cpp
+	database-postgresql.cpp
 	database.cpp
 	debug.cpp
 	defaultsettings.cpp
@@ -532,6 +550,9 @@ if(BUILD_CLIENT)
 	if (USE_REDIS)
 		target_link_libraries(${PROJECT_NAME} ${REDIS_LIBRARY})
 	endif()
+	if (USE_POSTGRESQL)
+		target_link_libraries(${PROJECT_NAME} ${POSTGRESQL_LIBRARY})
+	endif()
 endif(BUILD_CLIENT)
 
 
@@ -555,6 +576,9 @@ if(BUILD_SERVER)
 	endif()
 	if (USE_REDIS)
 		target_link_libraries(${PROJECT_NAME}server ${REDIS_LIBRARY})
+	endif()
+	if (USE_POSTGRESQL)
+		target_link_libraries(${PROJECT_NAME} ${POSTGRESQL_LIBRARY})
 	endif()
 	if(USE_CURL)
 		target_link_libraries(
