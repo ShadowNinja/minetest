@@ -36,7 +36,12 @@ extern "C" {
 				" got " + lua_typename(L, t) + ")."); \
 		} \
 	} while(0)
-#define CHECK_POS_COORD(name) CHECK_TYPE(-1, "position coordinate '" name "'", LUA_TNUMBER)
+#define CHECK_POS_COORD(name, var) do { \
+		CHECK_TYPE(-1, "position coordinate '" name "'", LUA_TNUMBER); \
+		var = lua_tonumber(L, -1); \
+		if (var != var) \
+			throw LuaError("NaN passed as " name " coordinate."); \
+	} while (0)
 #define CHECK_POS_TAB(index) CHECK_TYPE(index, "position", LUA_TTABLE)
 
 
@@ -78,12 +83,10 @@ v2s16 check_v2s16(lua_State *L, int index)
 	v2s16 p;
 	CHECK_POS_TAB(index);
 	lua_getfield(L, index, "x");
-	CHECK_POS_COORD("x");
-	p.X = lua_tonumber(L, -1);
+	CHECK_POS_COORD("x", p.X);
 	lua_pop(L, 1);
 	lua_getfield(L, index, "y");
-	CHECK_POS_COORD("y");
-	p.Y = lua_tonumber(L, -1);
+	CHECK_POS_COORD("y", p.Y);
 	lua_pop(L, 1);
 	return p;
 }
@@ -137,12 +140,10 @@ v2f check_v2f(lua_State *L, int index)
 	v2f p;
 	CHECK_POS_TAB(index);
 	lua_getfield(L, index, "x");
-	CHECK_POS_COORD("x");
-	p.X = lua_tonumber(L, -1);
+	CHECK_POS_COORD("x", p.X);
 	lua_pop(L, 1);
 	lua_getfield(L, index, "y");
-	CHECK_POS_COORD("y");
-	p.Y = lua_tonumber(L, -1);
+	CHECK_POS_COORD("y", p.Y);
 	lua_pop(L, 1);
 	return p;
 }
@@ -168,16 +169,13 @@ v3f check_v3f(lua_State *L, int index)
 	v3f pos;
 	CHECK_POS_TAB(index);
 	lua_getfield(L, index, "x");
-	CHECK_POS_COORD("x");
-	pos.X = lua_tonumber(L, -1);
+	CHECK_POS_COORD("x", pos.X);
 	lua_pop(L, 1);
 	lua_getfield(L, index, "y");
-	CHECK_POS_COORD("y");
-	pos.Y = lua_tonumber(L, -1);
+	CHECK_POS_COORD("y", pos.Y);
 	lua_pop(L, 1);
 	lua_getfield(L, index, "z");
-	CHECK_POS_COORD("z");
-	pos.Z = lua_tonumber(L, -1);
+	CHECK_POS_COORD("z", pos.Z);
 	lua_pop(L, 1);
 	return pos;
 }
