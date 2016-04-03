@@ -267,9 +267,8 @@ u8 flags
     you could try setting this 1 to everything and setting the uppermost
     block in every sector as is_underground=0. I am quite sure it doesn't
     work properly, though.
-  - 0x08: generated: True if the block has been generated. If false, block
-    is mostly filled with CONTENT_IGNORE and is likely to contain eg. parts
-    of trees of neighboring blocks.
+  - 0x08: generated: True if block is mostly filled with CONTENT_IGNORE
+    and is likely to contain eg. parts of trees of neighboring blocks.
 
 u8 content_width
 - Number of bytes in the content (param0) fields of nodes
