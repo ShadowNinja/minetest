@@ -21,12 +21,14 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "exceptions.h"
 #include "util/serialize.h"
 
-void NameIdMapping::serialize(std::ostream &os) const
+void NameIdMapping::serialize(std::ostream &os, u8 version) const
 {
 	writeU8(os, 0); // version
 	writeU16(os, m_id_to_name.size());
 	for (const auto &i : m_id_to_name) {
-		writeU16(os, i.first);
+		if (version <= 28) {
+			writeU16(os, i.first);
+		}
 		os << serializeString(i.second);
 	}
 }

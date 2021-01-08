@@ -21,7 +21,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "util/serialize.h"
 
-#include "zlib.h"
+#include <zlib.h>
+#include <zstd.h>
 
 /* report a zlib or i/o error */
 void zerr(int ret)
@@ -279,3 +280,35 @@ void decompress(std::istream &is, std::ostream &os, u8 version)
 }
 
 
+void compressZstd(const std::string &data, std::ostream &os, int level, Buffer<u8> *dict)
+{
+	ZSTD_CCtx *cctx = ZSTD_createCCtx();
+	ZSTD_CCtx_setParameter(cctx, ZSTD_c_compressionLevel, level);
+	ZSTD_CCtx_setPledgedSrcSize(cctx, data.size());
+
+	//if (dict) {
+	//	ZSTD_CCtx_loadDictionary_byReference(cctx, **dict, dict->getSize());
+	//}
+
+	ZSTD_inBuffer input = {0};
+	input.src = data.data();
+	input.size = data.size();
+
+	Buffer<u8> out_buf(ZSTD_CStreamOutSize());
+	ZSTD_outBuffer output = {0};
+	output.dst = *out_buf;
+	output.size = out_buf.getSize();
+
+	while (ZSTD_compressStream2(cctx, &output, &input, ZSTD_e_end)) {
+		os.write((const char*)output.dst, output.pos);
+		output.pos = 0;
+	}
+	os.write((const char*)output.dst, output.pos);
+
+	ZSTD_freeCCtx(cctx);
+}
+
+void decompressZstd(std::istream &is, std::ostream &os, size_t limit, void *dict)
+{
+
+}

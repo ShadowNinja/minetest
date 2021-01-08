@@ -338,10 +338,10 @@ void ReliablePacketBuffer::insert(BufferedPacket &p, u16 next_expected)
 			fprintf(stderr,
 					"Duplicated seqnum %d non matching packet detected:\n",
 					seqnum);
-			fprintf(stderr, "Old: seqnum: %05d size: %04d, address: %s\n",
+			fprintf(stderr, "Old: seqnum: %05d size: %04lu, address: %s\n",
 					readU16(&(i->data[BASE_HEADER_SIZE+1])),i->data.getSize(),
 					i->address.serializeString().c_str());
-			fprintf(stderr, "New: seqnum: %05d size: %04u, address: %s\n",
+			fprintf(stderr, "New: seqnum: %05d size: %04lu, address: %s\n",
 					readU16(&(p.data[BASE_HEADER_SIZE+1])),p.data.getSize(),
 					p.address.serializeString().c_str());
 			throw IncomingDataCorruption("duplicated packet isn't same as original one");

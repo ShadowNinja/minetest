@@ -328,14 +328,17 @@ u8 content_width
 - Number of bytes in the content (param0) fields of nodes
 if map format version <= 23:
     - Always 1
-if map format version >= 24:
+if map format version >= 24, <= 28:
     - Always 2
+if map format version >= 29:
+    - 1 or 2
 
-u8 params_width
-- Number of bytes used for parameters per node
-- Always 2
+if map format version <= 28:
+  u8 params_width
+  - Number of bytes used for parameters per node
+  - Always 2
 
-zlib-compressed node data:
+compressed node data:
 if content_width == 1:
     - content:
       u8[4096]: param0 fields
@@ -348,7 +351,7 @@ if content_width == 2:
       u8[4096]: param2 fields
 - The location of a node in each of those arrays is (z*16*16 + y*16 + x).
 
-zlib-compressed node metadata list
+compressed node metadata list
 - content:
 if map format version <= 22:
   u16 version (=1)
@@ -409,12 +412,15 @@ u32 timestamp
                difference when loaded
 
 u8 name-id-mapping version
-- Always 0
+if mapblock version <= 28
+ - Always 0
+if mapblock version >= 29
+ - Always 1
 
 u16 num_name_id_mappings
 
 foreach num_name_id_mappings
-  u16 id
+  u16 id # only in version 0
   u16 name_len
   u8[name_len] name
 

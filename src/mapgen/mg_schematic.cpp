@@ -375,8 +375,9 @@ bool Schematic::serializeToMts(std::ostream *os,
 		ss << serializeString(names[i]); // node names
 
 	// compressed bulk node data
-	MapNode::serializeBulk(ss, SER_FMT_VER_HIGHEST_WRITE,
-		schemdata, size.X * size.Y * size.Z, 2, 2, true);
+	Buffer<u8> data = MapNode::serializeBulk(SER_FMT_VER_HIGHEST_WRITE,
+		schemdata, size.X * size.Y * size.Z, 2);
+	compressZlib(*data, data.getSize(), ss);
 
 	return true;
 }

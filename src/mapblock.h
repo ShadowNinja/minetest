@@ -487,6 +487,8 @@ public:
 	// unknown blocks from id-name mapping to wndef
 	void deSerialize(std::istream &is, u8 version, bool disk);
 
+	void serializeNodes(std::ostream &os, NameIdMapping *nimap, u8 version, bool disk);
+
 	void serializeNetworkSpecific(std::ostream &os);
 	void deSerializeNetworkSpecific(std::istream &is);
 private:

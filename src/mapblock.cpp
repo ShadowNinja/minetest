@@ -248,15 +248,15 @@ s16 MapBlock::getGroundLevel(v2s16 p2d)
 */
 // List relevant id-name pairs for ids in the block using nodedef
 // Renumbers the content IDs (starting at 0 and incrementing
-// use static memory requires about 65535 * sizeof(int) ram in order to be
+// use static memory requires about 65535 * sizeof(content_t) ram in order to be
 // sure we can handle all content ids. But it's absolutely worth it as it's
 // a speedup of 4 for one of the major time consuming functions on storing
 // mapblocks.
-static content_t getBlockNodeIdMapping_mapping[USHRT_MAX + 1];
-static void getBlockNodeIdMapping(NameIdMapping *nimap, MapNode *nodes,
+static content_t getBlockNodeIdMapping_mapping[UINT16_MAX + 1];
+static u8 getBlockNodeIdMapping(NameIdMapping *nimap, MapNode *nodes,
 	const NodeDefManager *nodedef)
 {
-	memset(getBlockNodeIdMapping_mapping, 0xFF, (USHRT_MAX + 1) * sizeof(content_t));
+	memset(getBlockNodeIdMapping_mapping, 0xFF, (UINT16_MAX + 1) * sizeof(content_t));
 
 	std::set<content_t> unknown_contents;
 	content_t id_counter = 0;
@@ -289,6 +289,8 @@ static void getBlockNodeIdMapping(NameIdMapping *nimap, MapNode *nodes,
 		errorstream << "getBlockNodeIdMapping(): IGNORING ERROR: "
 				<< "Name for node id " << unknown_content << " not known" << std::endl;
 	}
+
+	return id_counter > UINT8_MAX ? 2 : 1;
 }
 // Correct ids in the block to match nodedef based on names.
 // Unknown ones are added to nodedef.
@@ -378,65 +380,85 @@ void MapBlock::serialize(std::ostream &os, u8 version, bool disk)
 		writeU16(os, m_lighting_complete);
 	}
 
-	/*
-		Bulk node data
-	*/
+	std::stringstream data_oss(std::ios_base::binary);
+	std::ostream *data_os = &os;
+	if (version >= 29) {
+		data_os = &data_oss;
+	}
+
+	// Bulk node data
 	NameIdMapping nimap;
-	if(disk)
-	{
-		MapNode *tmp_nodes = new MapNode[nodecount];
-		for(u32 i=0; i<nodecount; i++)
-			tmp_nodes[i] = data[i];
-		getBlockNodeIdMapping(&nimap, tmp_nodes, m_gamedef->ndef());
+	serializeNodes(*data_os, &nimap, version, disk);
 
-		u8 content_width = 2;
-		u8 params_width = 2;
-		writeU8(os, content_width);
-		writeU8(os, params_width);
-		MapNode::serializeBulk(os, version, tmp_nodes, nodecount,
-				content_width, params_width, true);
-		delete[] tmp_nodes;
+	// Node metadata
+	if (version <= 28) {
+		std::ostringstream oss(std::ios_base::binary);
+		m_node_metadata.serialize(oss, version, disk);
+		compressZlib(oss.str(), os);
+	} else {
+		m_node_metadata.serialize(*data_os, version, disk);
 	}
-	else
-	{
-		u8 content_width = 2;
-		u8 params_width = 2;
-		writeU8(os, content_width);
-		writeU8(os, params_width);
-		MapNode::serializeBulk(os, version, data, nodecount,
-				content_width, params_width, true);
-	}
-
-	/*
-		Node metadata
-	*/
-	std::ostringstream oss(std::ios_base::binary);
-	m_node_metadata.serialize(oss, version, disk);
-	compressZlib(oss.str(), os);
 
 	/*
 		Data that goes to disk, but not the network
 	*/
-	if(disk)
-	{
-		if(version <= 24){
+	if (disk) {
+		if (version <= 24){
 			// Node timers
-			m_node_timers.serialize(os, version);
+			m_node_timers.serialize(*data_os, version);
 		}
 
 		// Static objects
-		m_static_objects.serialize(os);
+		m_static_objects.serialize(*data_os);
 
 		// Timestamp
-		writeU32(os, getTimestamp());
+		writeU32(*data_os, getTimestamp());
 
 		// Write block-specific node definition id mapping
-		nimap.serialize(os);
+		nimap.serialize(*data_os, version);
 
-		if(version >= 25){
+		if (version >= 25) {
 			// Node timers
-			m_node_timers.serialize(os, version);
+			m_node_timers.serialize(*data_os, version);
 		}
+	}
+
+	if (version >= 29) {
+		compressZstd(data_oss.str(), os);
+	}
+}
+
+
+void MapBlock::serializeNodes(std::ostream &os, NameIdMapping *nimap, u8 version, bool disk)
+{
+	u8 content_width = 2;
+	MapNode *nodes = data;
+
+	if (disk) {
+		MapNode *nodes = new MapNode[nodecount];
+		memcpy(nodes, data, sizeof(MapNode) * nodecount);
+
+		content_width = getBlockNodeIdMapping(nimap, nodes, m_gamedef->ndef());
+	}
+
+	if (version <= 28) {
+		content_width = 2;
+		writeU8(os, content_width);
+		writeU8(os, 2);  // Param width
+	} else {
+		writeU8(os, content_width);
+	}
+
+	Buffer<u8> buf = MapNode::serializeBulk(version, nodes, nodecount, content_width);
+
+	if (disk) {
+		delete[] nodes;
+	}
+
+	if (version <= 28) {
+		compressZlib(*buf, buf.getSize(), os);
+	} else {
+		os.write((const char*)*buf, buf.getSize());
 	}
 }
 

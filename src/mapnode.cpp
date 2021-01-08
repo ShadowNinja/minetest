@@ -704,15 +704,12 @@ void MapNode::deSerialize(u8 *source, u8 version)
 		}
 	}
 }
-void MapNode::serializeBulk(std::ostream &os, int version,
-		const MapNode *nodes, u32 nodecount,
-		u8 content_width, u8 params_width, bool compressed)
+
+Buffer<u8> MapNode::serializeBulk(int version, const MapNode *nodes, u32 nodecount,
+		u8 content_width)
 {
 	if (!ser_ver_supported(version))
 		throw VersionMismatchException("ERROR: MapNode format not supported");
-
-	sanity_check(content_width == 2);
-	sanity_check(params_width == 2);
 
 	// Can't do this anymore; we have 16-bit dynamically allocated node IDs
 	// in memory; conversion just won't work in this direction.
@@ -720,29 +717,20 @@ void MapNode::serializeBulk(std::ostream &os, int version,
 		throw SerializationError("MapNode::serializeBulk: serialization to "
 				"version < 24 not possible");
 
-	size_t databuf_size = nodecount * (content_width + params_width);
-	u8 *databuf = new u8[databuf_size];
+	Buffer<u8> buf(nodecount * (content_width + 2));
 
 	u32 start1 = content_width * nodecount;
 	u32 start2 = (content_width + 1) * nodecount;
 
 	// Serialize content
 	for (u32 i = 0; i < nodecount; i++) {
-		writeU16(&databuf[i * 2], nodes[i].param0);
-		writeU8(&databuf[start1 + i], nodes[i].param1);
-		writeU8(&databuf[start2 + i], nodes[i].param2);
+		sanity_check(content_width == 2 || nodes[i].param0 <= UINT8_MAX);
+		writeU16(&buf[i * 2], nodes[i].param0);
+		writeU8(&buf[start1 + i], nodes[i].param1);
+		writeU8(&buf[start2 + i], nodes[i].param2);
 	}
 
-	/*
-		Compress data to output stream
-	*/
-
-	if (compressed)
-		compressZlib(databuf, databuf_size, os);
-	else
-		os.write((const char*) &databuf[0], databuf_size);
-
-	delete [] databuf;
+	return buf;
 }
 
 // Deserialize bulk node data

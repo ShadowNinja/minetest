@@ -27,79 +27,78 @@ template <typename T>
 class Buffer
 {
 public:
-	Buffer()
-	{
+	Buffer() {
 		m_size = 0;
 		data = NULL;
 	}
-	Buffer(unsigned int size)
-	{
+
+	Buffer(size_t size) {
 		m_size = size;
-		if(size != 0)
+		if (size != 0) {
 			data = new T[size];
-		else
+		} else {
 			data = NULL;
-	}
-	Buffer(const Buffer &buffer)
-	{
-		m_size = buffer.m_size;
-		if(m_size != 0)
-		{
-			data = new T[buffer.m_size];
-			memcpy(data, buffer.data, buffer.m_size);
 		}
-		else
-			data = NULL;
 	}
-	Buffer(const T *t, unsigned int size)
-	{
+
+	Buffer(const T *t, size_t size) {
 		m_size = size;
-		if(size != 0)
-		{
+		if (size != 0) {
 			data = new T[size];
-			memcpy(data, t, size);
-		}
-		else
+			memcpy(data, t, sizeof(T) * size);
+		} else {
 			data = NULL;
+		}
 	}
-	~Buffer()
-	{
+
+	Buffer(const Buffer &buffer) :
+		Buffer(buffer.data, buffer.m_size) {}
+	
+	~Buffer() {
 		drop();
 	}
-	Buffer& operator=(const Buffer &buffer)
-	{
-		if(this == &buffer)
-			return *this;
-		drop();
-		m_size = buffer.m_size;
-		if(m_size != 0)
-		{
-			data = new T[buffer.m_size];
+
+	Buffer& operator=(const Buffer &buffer) {
+		if (this != &buffer) {
+			resize(buffer.m_size);
 			memcpy(data, buffer.data, buffer.m_size);
 		}
-		else
-			data = NULL;
 		return *this;
 	}
-	T & operator[](unsigned int i) const
-	{
+
+	T & operator[](size_t i) const {
 		return data[i];
 	}
-	T * operator*() const
-	{
+
+	T * operator*() const {
 		return data;
 	}
-	unsigned int getSize() const
-	{
+
+	size_t getSize() const {
 		return m_size;
 	}
+
 private:
-	void drop()
-	{
-		delete[] data;
+	void resize(size_t size) {
+		if (size == m_size) {
+			return;
+		}
+		if (m_size != 0) {
+			drop();
+		}
+		if (size != 0) {
+			data = new T[size];
+		}
+		m_size = size;
 	}
+
+	void drop() {
+		delete[] data;
+		data = NULL;
+	}
+
 	T *data;
-	unsigned int m_size;
+	size_t m_size;
 };
 
 /************************************************
