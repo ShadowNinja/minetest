@@ -242,7 +242,6 @@ HTTPFetchOngoing::HTTPFetchOngoing(const HTTPFetchRequest &request_,
 
 	// Set static cURL options
 	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
-	curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1);
 	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
 	curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 3);
 	curl_easy_setopt(curl, CURLOPT_ENCODING, "gzip");
@@ -281,17 +280,10 @@ HTTPFetchOngoing::HTTPFetchOngoing(const HTTPFetchRequest &request_,
 		curl_easy_setopt(curl, CURLOPT_USERAGENT, request.useragent.c_str());
 
 	// Set up a write callback that writes to the
-	// ostringstream ongoing->oss, unless the data
-	// is to be discarded
-	if (request.caller == HTTPFETCH_DISCARD) {
-		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
-				httpfetch_discardfunction);
-		curl_easy_setopt(curl, CURLOPT_WRITEDATA, NULL);
-	} else {
-		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
-				httpfetch_writefunction);
-		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &oss);
-	}
+	// ostringstream ongoing->oss
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
+			httpfetch_writefunction);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &oss);
 
 	// Set data from fields or raw_data
 	if (request.multipart) {
@@ -393,10 +385,16 @@ const HTTPFetchResult * HTTPFetchOngoing::complete(CURLcode res)
 	}
 
 	if (res != CURLE_OK) {
-		errorstream << request.url << " not found ("
-			<< curl_easy_strerror(res) << ")"
-			<< " (response code " << result.response_code << ")"
+		errorstream << "HTTPFetch for " << request.url << " failed ("
+			<< curl_easy_strerror(res) << ")" << std::endl;
+	} else if (result.response_code >= 400) {
+		errorstream << "HTTPFetch for " << request.url
+			<< " returned response code " << result.response_code
 			<< std::endl;
+		if (!result.data.empty()) {
+			errorstream << "Response body:" << std::endl
+				<< result.data << std::endl;
+		}
 	}
 
 	return &result;
