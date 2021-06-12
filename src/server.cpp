@@ -673,6 +673,7 @@ void Server::AsyncRunStep(bool initial_step)
 				g_settings->getBool("server_announce")) {
 			ServerList::sendAnnounce(counter ? ServerList::AA_UPDATE :
 						ServerList::AA_START,
+					m_env->getWorldUuid(),
 					m_bind_addr.getPort(),
 					m_clients.getPlayerNames(),
 					m_uptime_counter->get(),
@@ -3825,6 +3826,7 @@ void dedicated_server_loop(Server &server, bool &kill)
 #if USE_CURL
 	if (g_settings->getBool("server_announce"))
 		ServerList::sendAnnounce(ServerList::AA_DELETE,
+			server.getEnv().getWorldUuid(),
 			server.m_bind_addr.getPort());
 #endif
 }

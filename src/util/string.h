@@ -732,3 +732,8 @@ inline irr::core::stringw utf8_to_stringw(const std::string &input)
  * 2. Remove 'unsafe' characters from the name by replacing them with '_'
  */
 std::string sanitizeDirName(const std::string &str, const std::string &optional_prefix);
+
+/**
+ * Generate a version 4 (random) UUID based on RFC4122
+ */
+std::string generate_uuid4();

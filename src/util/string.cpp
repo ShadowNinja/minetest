@@ -874,3 +874,22 @@ std::string sanitizeDirName(const std::string &str, const std::string &optional_
 
 	return wide_to_utf8(safe_name);
 }
+
+
+std::string generate_uuid4()
+{
+	char uuid[16];
+	porting::secure_rand_fill_buf(uuid, sizeof(uuid));
+
+	// Version 4: Random
+	uuid[6] = (uuid[6] & ~0xf0) | 4 << 4;
+	// Variant 1: RFC4122
+	uuid[8] = (uuid[8] & ~0xc0) | 0x80;
+
+	return
+		hex_encode(uuid, 4) + '-' +
+		hex_encode(uuid + 4, 2) + '-' +
+		hex_encode(uuid + 6, 2) + '-' +
+		hex_encode(uuid + 8, 2) + '-' +
+		hex_encode(uuid + 10, 6);
+}
